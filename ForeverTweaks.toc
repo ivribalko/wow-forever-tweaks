@@ -5,5 +5,4 @@
 ## SavedVariables: ForeverTweaksDiagnostics
 
 ForeverTweaks.lua
-MinimapZoom.lua
 PlayerFrameXP.lua
