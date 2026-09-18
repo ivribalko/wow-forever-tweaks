@@ -132,11 +132,16 @@ local combatOpacityFrames = {
     "GamepadMainActionBarFrame",
     "PlayerCastingBarFrame",
     "GamepadPlayerCastingBarFrame",
+    "ObjectiveTrackerFrame",
 }
 local hookedOpacityFrames = setmetatable({}, { __mode = "k" })
 local outOfCombatAlpha = 0.4
 local inCombatAlpha = 0.7
 local currentCombatAlpha = outOfCombatAlpha
+local combatBlend = InCombatLockdown() and 1 or 0
+local targetCombatBlend = combatBlend
+local fadeDuration = 0.45
+local fadeDriver = CreateFrame("Frame")
 
 -- Track native cast-bar alpha separately so repeated updates never compound it.
 local castBarNativeAlpha = setmetatable({}, { __mode = "k" })
@@ -144,7 +149,11 @@ local settingCastBarAlpha = false
 
 local function ApplyCombatOpacity(frame)
     settingCastBarAlpha = true
-    frame:SetAlpha(currentCombatAlpha * (castBarNativeAlpha[frame] or 1))
+    if frame == ObjectiveTrackerFrame then
+        frame:SetAlpha(1 - combatBlend)
+    else
+        frame:SetAlpha(currentCombatAlpha * (castBarNativeAlpha[frame] or 1))
+    end
     settingCastBarAlpha = false
 end
 
@@ -171,15 +180,8 @@ local function UpdateCastBarFadeOpacity(frame)
     end
 end
 
-local function UpdateCombatOpacity(_, event)
-    if event == "PLAYER_REGEN_DISABLED" then
-        currentCombatAlpha = inCombatAlpha
-    elseif event == "PLAYER_REGEN_ENABLED" then
-        currentCombatAlpha = outOfCombatAlpha
-    else
-        currentCombatAlpha = InCombatLockdown() and inCombatAlpha or outOfCombatAlpha
-    end
-
+local function RefreshCombatOpacity()
+    currentCombatAlpha = outOfCombatAlpha + (inCombatAlpha - outOfCombatAlpha) * combatBlend
     for _, name in ipairs(combatOpacityFrames) do
         local frame = _G[name]
         if frame then
@@ -197,6 +199,37 @@ local function UpdateCombatOpacity(_, event)
             ApplyCombatOpacity(frame)
         end
     end
+end
+
+-- One shared cosine ease keeps all frames synchronized and reverses from current opacity.
+local function UpdateCombatOpacity(_, event)
+    local desired = InCombatLockdown() and 1 or 0
+    if event == "PLAYER_REGEN_DISABLED" then
+        desired = 1
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        desired = 0
+    end
+
+    if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
+        fadeDriver:SetScript("OnUpdate", nil)
+        combatBlend = desired
+        targetCombatBlend = desired
+    elseif desired ~= targetCombatBlend then
+        targetCombatBlend = desired
+        local startingBlend = combatBlend
+        local elapsedTime = 0
+        fadeDriver:SetScript("OnUpdate", function(self, elapsed)
+            elapsedTime = elapsedTime + elapsed
+            local progress = math.min(elapsedTime / fadeDuration, 1)
+            local eased = (1 - math.cos(math.pi * progress)) / 2
+            combatBlend = startingBlend + (desired - startingBlend) * eased
+            RefreshCombatOpacity()
+            if progress == 1 then
+                self:SetScript("OnUpdate", nil)
+            end
+        end)
+    end
+    RefreshCombatOpacity()
 end
 
 local opacityEvents = CreateFrame("Frame")
