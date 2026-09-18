@@ -16,6 +16,36 @@ button:SetScript("OnClick", function()
     end
 end)
 
+-- Hide decorative chat regions without writing settings or firing chat-config events.
+local function HideChatBackground(name)
+    for _, suffix in ipairs(CHAT_FRAME_TEXTURES or {}) do
+        local texture = _G[name .. suffix]
+        if texture and texture:IsShown() then
+            texture:Hide()
+        end
+    end
+end
+
+-- Keep chat tabs clickable, revealing each only while hovered, over a clear background.
+local function UpdateChatTabVisibility()
+    for _, name in ipairs(CHAT_FRAMES or {}) do
+        HideChatBackground(name)
+        local tab = _G[name .. "Tab"]
+        if tab then
+            tab:SetAlpha(tab:IsMouseOver() and 1 or 0)
+        end
+    end
+end
+
+local chatTabEvents = CreateFrame("Frame")
+chatTabEvents:RegisterEvent("PLAYER_LOGIN")
+chatTabEvents:SetScript("OnEvent", function(self)
+    self:UnregisterEvent("PLAYER_LOGIN")
+    UpdateChatTabVisibility()
+    -- Blizzard also fades tabs; refresh like UITweaks and discover new tabs each pass.
+    self.hoverTicker = C_Timer.NewTicker(0.1, UpdateChatTabVisibility)
+end)
+
 -- Use Forever's native opt-out: aura IDs can be secret in addon callbacks.
 -- This disables automatic aura popups without reading auras or changing UI queues.
 local auraSettings = CreateFrame("Frame")
@@ -177,7 +207,7 @@ opacityEvents:RegisterEvent("PLAYER_REGEN_DISABLED")
 opacityEvents:RegisterEvent("PLAYER_REGEN_ENABLED")
 opacityEvents:SetScript("OnEvent", UpdateCombatOpacity)
 
--- Set chat to three times its 120-unit default once the initial layout has loaded.
+-- Position and size chat once the initial layout has loaded.
 local chatHeightEvents = CreateFrame("Frame")
 chatHeightEvents:RegisterEvent("PLAYER_ENTERING_WORLD")
 chatHeightEvents:SetScript("OnEvent", function(self)
@@ -185,6 +215,9 @@ chatHeightEvents:SetScript("OnEvent", function(self)
     C_Timer.After(0, function()
         if ChatFrame1 then
             ChatFrame1:SetHeight(360)
+            -- Leave room for the left-side buttons and the 32-unit input box below.
+            ChatFrame1:ClearAllPoints()
+            ChatFrame1:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 32, 36)
         end
     end)
 end)

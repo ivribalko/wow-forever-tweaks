@@ -7,6 +7,9 @@ A lightweight World of Warcraft Classic addon with a small icon-only reload butt
 - Enable Forever Tweaks in the character selection AddOns menu.
 - Restart the game if the newly created addon is absent from the list.
 - The button has no text, configuration, or external dependencies.
+- Chat backgrounds and decorative borders, including side-button backgrounds, are hidden even on hover. Chat text and controls remain visible; saved background settings are not changed.
+- Chat is anchored at the bottom-left after login or UI reload, with space for its side buttons and input box.
+- Chat tabs are invisible until individually hovered, matching UITweaks, including newly opened tabs. They remain clickable.
 - The main chat window and its docked tabs are set to 360 UI units tall, three times the default, once after login or UI reload. Later native layout changes may override this height.
 - Automatic gamepad aura popups are disabled through `GamepadShowAutoAuraTooltip`, including Plainsrunning stack popups. Manual buff inspection remains available. This client setting persists if the addon is disabled; restore it with `/console GamepadShowAutoAuraTooltip 1`.
 - Player and target frames, the player cast bar, and the gamepad action bars are 40% visible outside combat and 70% visible in combat.
