@@ -4,6 +4,7 @@
 - `ForeverTweaks.lua` creates a button parented to the native minimap, anchors it to the top-right corner, and calls the game's reload API directly from a mouse click.
 - At login, `C_CVar.SetCVar` disables `GamepadShowAutoAuraTooltip`. Blizzard then skips its automatic aura-popup queue. No aura data is read or native queue mutated, and manual tooltip inspection remains available. The CVar persists in client settings.
 - `Reload.tga` supplies the circular-arrow artwork for the normal and pressed states.
+- A one-shot `PLAYER_ENTERING_WORLD` handler defers `ChatFrame1:SetHeight(360)` until the next timer tick, after initial layout. It installs no resize hooks and does not change chat background settings.
 - `PlayerFrameXP.lua` adds event-driven XP percentage text to the player name row and reserves name width while XP is available. Player-art hooks refresh vehicle visibility. A container update script masks XP artwork and mouse input, including borders and dividers while XP is selected, without hooking bar assignment or animation methods.
 - Addon-load and login events hide `PTR_IssueReporter`; an `OnShow` hook keeps the floating panel hidden if the beta UI reopens it.
 - A post-hook on `PopFrameAttachedSurvey` hides the separate quest feedback survey, with an `OnShow` hook for subsequent openings. It does not submit feedback or hide the quest frame.

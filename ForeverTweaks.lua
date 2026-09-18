@@ -176,3 +176,15 @@ opacityEvents:RegisterEvent("ADDON_LOADED")
 opacityEvents:RegisterEvent("PLAYER_REGEN_DISABLED")
 opacityEvents:RegisterEvent("PLAYER_REGEN_ENABLED")
 opacityEvents:SetScript("OnEvent", UpdateCombatOpacity)
+
+-- Set chat to three times its 120-unit default once the initial layout has loaded.
+local chatHeightEvents = CreateFrame("Frame")
+chatHeightEvents:RegisterEvent("PLAYER_ENTERING_WORLD")
+chatHeightEvents:SetScript("OnEvent", function(self)
+    self:UnregisterEvent("PLAYER_ENTERING_WORLD")
+    C_Timer.After(0, function()
+        if ChatFrame1 then
+            ChatFrame1:SetHeight(360)
+        end
+    end)
+end)
