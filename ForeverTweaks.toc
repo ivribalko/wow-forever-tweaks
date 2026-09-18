@@ -1,0 +1,6 @@
+## Interface: 16001
+## Title: Forever Tweaks
+## Notes: Adds a small icon-only reload button at the top right of the minimap.
+## Version: 1.0.0
+
+ForeverTweaks.lua
