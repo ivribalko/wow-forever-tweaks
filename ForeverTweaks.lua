@@ -94,3 +94,85 @@ diagnosticEvents:SetScript("OnEvent", function(_, event, addon, action)
         table.remove(entries, 1)
     end
 end)
+
+-- Apply combat-dependent opacity to the unit frames, player cast bars, and gamepad bars.
+local combatOpacityFrames = {
+    "PlayerFrame",
+    "TargetFrame",
+    "GamepadMainActionBarFrame",
+    "PlayerCastingBarFrame",
+    "GamepadPlayerCastingBarFrame",
+}
+local hookedOpacityFrames = setmetatable({}, { __mode = "k" })
+local outOfCombatAlpha = 0.4
+local inCombatAlpha = 0.7
+local currentCombatAlpha = outOfCombatAlpha
+
+-- Track native cast-bar alpha separately so repeated updates never compound it.
+local castBarNativeAlpha = setmetatable({}, { __mode = "k" })
+local settingCastBarAlpha = false
+
+local function ApplyCombatOpacity(frame)
+    settingCastBarAlpha = true
+    frame:SetAlpha(currentCombatAlpha * (castBarNativeAlpha[frame] or 1))
+    settingCastBarAlpha = false
+end
+
+-- Catch both ApplyAlpha and direct SetAlpha calls without replacing Blizzard methods.
+local function ApplyCastBarOpacity(frame, alpha)
+    if settingCastBarAlpha then
+        return
+    end
+    castBarNativeAlpha[frame] = alpha
+    ApplyCombatOpacity(frame)
+end
+
+-- Native animation alpha bypasses SetAlpha; cap the hold and fade endpoints too.
+local function UpdateCastBarFadeOpacity(frame)
+    for _, name in ipairs({ "FadeOutAnim", "HoldFadeOutAnim" }) do
+        local group = frame[name]
+        if group then
+            local animations = { group:GetAnimations() }
+            for index, animation in ipairs(animations) do
+                animation:SetFromAlpha(currentCombatAlpha)
+                animation:SetToAlpha(index == #animations and 0 or currentCombatAlpha)
+            end
+        end
+    end
+end
+
+local function UpdateCombatOpacity(_, event)
+    if event == "PLAYER_REGEN_DISABLED" then
+        currentCombatAlpha = inCombatAlpha
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        currentCombatAlpha = outOfCombatAlpha
+    else
+        currentCombatAlpha = InCombatLockdown() and inCombatAlpha or outOfCombatAlpha
+    end
+
+    for _, name in ipairs(combatOpacityFrames) do
+        local frame = _G[name]
+        if frame then
+            if not hookedOpacityFrames[frame] then
+                frame:HookScript("OnShow", ApplyCombatOpacity)
+                if name == "PlayerCastingBarFrame" or name == "GamepadPlayerCastingBarFrame" then
+                    castBarNativeAlpha[frame] = 1
+                    hooksecurefunc(frame, "SetAlpha", ApplyCastBarOpacity)
+                end
+                hookedOpacityFrames[frame] = true
+            end
+            if castBarNativeAlpha[frame] then
+                UpdateCastBarFadeOpacity(frame)
+            end
+            ApplyCombatOpacity(frame)
+        end
+    end
+end
+
+local opacityEvents = CreateFrame("Frame")
+opacityEvents:RegisterEvent("PLAYER_LOGIN")
+opacityEvents:RegisterEvent("PLAYER_ENTERING_WORLD")
+opacityEvents:RegisterEvent("ADDON_LOADED")
+opacityEvents:RegisterEvent("PLAYER_REGEN_DISABLED")
+opacityEvents:RegisterEvent("PLAYER_REGEN_ENABLED")
+opacityEvents:SetScript("OnEvent", UpdateCombatOpacity)
