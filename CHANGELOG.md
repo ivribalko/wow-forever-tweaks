@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Matched the reload button to the minimap day/night indicator with a native circular rim and refresh symbol.
 - Updated quest navigation every frame and disabled arrow and nearby marker pixel snapping to reduce movement jitter.
 
 - Displayed the arrow’s selected quest name beneath the minimap location name.
