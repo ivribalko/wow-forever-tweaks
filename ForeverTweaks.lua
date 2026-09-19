@@ -115,6 +115,7 @@ reporterEvents:RegisterEvent("PLAYER_LOGIN")
 reporterEvents:SetScript("OnEvent", HideIssueReporter)
 HideIssueReporter()
 
+--@alpha@
 -- Persist a bounded record of protected-action failures for diagnosis after reload.
 local diagnosticEvents = CreateFrame("Frame")
 diagnosticEvents:RegisterEvent("ADDON_ACTION_BLOCKED")
@@ -137,6 +138,8 @@ diagnosticEvents:SetScript("OnEvent", function(_, event, addon, action)
         table.remove(entries, 1)
     end
 end)
+
+--@end-alpha@
 
 -- Apply combat-dependent opacity to the unit frames, player cast bars, and gamepad bars.
 local combatOpacityFrames = {

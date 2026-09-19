@@ -1,10 +1,25 @@
 # Forever Tweaks
 
-A lightweight World of Warcraft Classic addon with a small icon-only reload button at the minimap's top-right corner. Left-click the circular arrow to reload the interface.
+A lightweight quality-of-life addon for World of Warcraft Forever.
+
+## Features
+
+- Adds a small circular-arrow button at the minimap’s top-right corner to reload the interface.
+- Points toward the closest incomplete quest objective in the current zone, with a minimap marker when it is nearby.
+- Removes chat backgrounds and borders, shows chat tabs only on hover, and places a taller chat window at the bottom-left.
+- Smoothly fades player and target frames, cast bars, and gamepad action bars between 40% opacity outside combat and 70% in combat.
+- Fades the quest tracker out during combat and back in afterward.
+- Shows XP progress as a gold percentage beside the player name and hides the original XP artwork.
+- Binds controller inputs for the world map and inventory; PlayStation touchpad sides require the local mapping described below.
+- Disables automatic gamepad buff popups while keeping manual buff inspection available.
+- Hides the floating beta Issue Reporter and automatic quest-reward feedback surveys.
+- Captures protected-action diagnostics in source and alpha packages for troubleshooting.
 
 ## Usage
 
-- Enable Forever Tweaks in the character selection AddOns menu.
+- Supports WoW Forever beta 1.60.1 (`16001`).
+- Place the `ForeverTweaks` folder in the client’s `Interface/AddOns` directory and enable Forever Tweaks in the AddOns menu.
+- The AddOns list uses the same circular-arrow icon as the minimap reload button.
 - Restart the game if the newly created addon is absent from the list.
 - The button has no text, configuration, or external dependencies.
 - The PlayStation controller's left touchpad click toggles the world map through `PADPADDLE1`; its right touchpad click toggles inventory through `PAD6`. A local `WTF/GamePadConfig_*.json` mapping assigns the left-side input to `PADPADDLE1` and the right-side input to `PAD6`; restart the game after changing that mapping. The addon bindings last only while enabled.
@@ -19,7 +34,7 @@ A lightweight World of Warcraft Classic addon with a small icon-only reload butt
 - XP progress appears as a gold percentage beside the player name, following UITweaks. The original XP artwork is hidden; other status bars remain available. The percentage hides when XP is disabled, at the level cap, or while the player frame shows a vehicle.
 - The floating Issue Reporter panel is hidden.
 - The automatic quest-reward feedback survey ("Did you experience any issues?") is hidden without submitting a report.
-- Protected-action failures are captured in `ForeverTweaksDiagnostics` SavedVariables, with up to 20 records of addon attribution, action, UI state, and call stack. Reload after reproducing a failure to persist the capture in the client's WTF directory; keep these files outside the repository.
+- In source and alpha packages, protected-action failures are captured in `ForeverTweaksDiagnostics` SavedVariables, with up to 20 records of addon attribution, action, UI state, and call stack. Reload after reproducing a failure to persist the capture in the client's WTF directory; keep these files outside the repository.
 
 ## UI Source Reference
 
@@ -30,6 +45,23 @@ A lightweight World of Warcraft Classic addon with a small icon-only reload butt
 - [Blizzard_PTRFeedback_Frames.lua](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_PTRFeedback/Blizzard_PTRFeedback_Frames.lua) creates the floating `PTR_IssueReporter` panel in `CreateMainView`.
 - Quest reward feedback is registered in `Blizzard_Reports.lua` and displayed by `PopFrameAttachedSurvey` in `Blizzard_PTRFeedback.lua`. Its separate frame is stored in `PTR_IssueReporter.Data.FrameAttachedSurveyFrames[QuestFrame]`.
 - Search for the visible behavior, frame, event, or setting, then trace its callers and load order before choosing a hook. Automatic popups can use a different frame from `GameTooltip`.
+
+## Releases
+
+[`.pkgmeta`](.pkgmeta) configures CurseForge packaging as one `ForeverTweaks` folder. The manifest uses `@project-version@` for tag-based versions, and [CHANGELOG.md](CHANGELOG.md) supplies release notes. Repository documentation, tooling, and local captures are excluded.
+
+- Connect the repository to a CurseForge project and select tag-only packaging using the [automatic packaging instructions](https://support.curseforge.com/support/solutions/articles/9000197281). Keep integration tokens in service settings, never in tracked files.
+- Update the changelog before tagging. Use `MAJOR.MINOR.PATCH-beta.NUMBER` for Beta, `MAJOR.MINOR.PATCH` for Release, and tags containing `alpha` for Alpha.
+- Complete in-game acceptance checks before a Release tag, including reload, quest navigation, chat, combat fades, XP display, and controller shortcuts. Verify the published file’s game-version labels match Forever.
+- Commit and push the intended revision and tag only after manual confirmation. CurseForge packages that revision and substitutes the version.
+
+Source and alpha packages retain protected-action diagnostics. Beta and release packages disable the diagnostic handler through `--@alpha@` markers. Zipping raw source retains diagnostics and does not substitute the version token. The aura-tooltip client setting persists after disabling the addon; restore it with `/console GamepadShowAutoAuraTooltip 1`.
+
+## Maintenance and license
+
+This is an owner-maintained project. External pull requests are not accepted.
+
+The project is licensed under the [MIT License](LICENSE). World of Warcraft and third-party addon names belong to their respective owners. References to game-provided artwork and APIs do not grant rights to those external assets.
 
 ## Repository Rules
 

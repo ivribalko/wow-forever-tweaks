@@ -1,7 +1,8 @@
 ## Interface: 16001
 ## Title: Forever Tweaks
-## Notes: Adds a small icon-only reload button at the top right of the minimap.
-## Version: 1.0.0
+## IconTexture: Interface\AddOns\ForeverTweaks\Reload.tga
+## Notes: Quality-of-life tweaks for WoW Forever: minimap reload and quest navigation, cleaner chat, combat fades, XP percentage, and controller shortcuts.
+## Version: @project-version@
 ## SavedVariables: ForeverTweaksDiagnostics
 
 ForeverTweaks.lua

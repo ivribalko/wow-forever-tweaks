@@ -1,9 +1,11 @@
 # Architecture
 
-- `ForeverTweaks.toc` declares addon metadata and loads the Lua entry point.
+- `ForeverTweaks.toc` declares addon metadata and loads the Lua modules in order.
+- `.pkgmeta` defines CurseForge archive layout and exclusions; `CHANGELOG.md` supplies release notes and `LICENSE` supplies the distribution license. Tag packaging replaces the manifest version token and disables alpha-marked diagnostics in beta and release packages.
 - `ForeverTweaks.lua` creates a button parented to the native minimap, anchors it to the top-right corner, and calls the game's reload API directly from a mouse click.
 - At login, `C_CVar.SetCVar` disables `GamepadShowAutoAuraTooltip`. Blizzard then skips its automatic aura-popup queue. No aura data is read or native queue mutated, and manual tooltip inspection remains available. The CVar persists in client settings.
-- `Reload.tga` supplies the circular-arrow artwork for the normal and pressed states.
+- `Reload.tga` supplies the circular-arrow artwork for the button states and the manifest’s addon-list icon.
+- `Reload.png` is a PNG copy for sharing and project artwork; it is excluded from the game package.
 - A login handler binds `PADPADDLE1` to the native `TOGGLEWORLDMAP` action and `PAD6` to `OPENALLBAGS` with frame-owned overrides, deferred until combat ends if necessary. Device-specific touchpad mappings remain outside the repository in the client's `WTF` directory; the left-side click maps to `PADPADDLE1` and the right-side click maps to `PAD6`, avoiding Blizzard’s higher-priority `PADBACK` bindings.
 - `QuestArrow.lua` reads native quest POIs for the player's current map once per second and after quest events, filters out completed objectives and failed quests, and compares distances using the map's dimensions in yards. A separate minimap child driver updates Blizzard's `Navigation-Tracked-Arrow` texture at 20 Hz and replaces it with the native `Navigation-Tracked-Icon` texture when the objective fits inside the minimap. The artwork is a separate UIParent child in fixed HIGH strata, outside the Minimap widget; its scale follows the minimap and its driver hides it when the minimap hides. `C_Minimap.GetViewRadius()` converts distance to minimap position, following zoom and rotation without modifying quest selection, tracking, or map state.
 - A temporary animation driver interpolates a shared combat blend with a 0.45-second cosine ease, driving unit/gamepad opacity from 0.4 to 0.7 and objective-tracker opacity from 1 to 0. Reversed transitions start at the current blend; the driver stops at completion. Login and world entry initialize directly to the current combat state.
