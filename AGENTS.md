@@ -7,7 +7,7 @@ A lightweight World of Warcraft Classic addon with a small icon-only reload butt
 - Enable Forever Tweaks in the character selection AddOns menu.
 - Restart the game if the newly created addon is absent from the list.
 - The button has no text, configuration, or external dependencies.
-- A native WoW navigation arrow on the minimap rim points toward the closest native map marker for an incomplete quest in the current zone. Within minimap range, it becomes a native quest-navigation marker at the objective's map position, including on arrival. It follows minimap rotation and zoom, skips completed and failed quests, and hides when no location is available. Locations represent Blizzard's quest objectives, not individual live mobs or loot objects.
+- A native WoW navigation arrow on the minimap rim points toward the closest native map marker for an incomplete quest in the current zone. Within minimap range, it becomes a native quest-navigation marker at the objective's map position, including on arrival. It draws above the day/night indicator, follows minimap rotation and zoom, skips completed and failed quests, and hides when no location is available. Locations represent Blizzard's quest objectives, not individual live mobs or loot objects.
 - Chat backgrounds and decorative borders, including side-button backgrounds, are hidden even on hover. Chat text and controls remain visible; saved background settings are not changed.
 - Chat is anchored at the bottom-left after login or UI reload, with space for its side buttons and input box.
 - Chat tabs are invisible until individually hovered, matching UITweaks, including newly opened tabs. They remain clickable.
@@ -21,6 +21,8 @@ A lightweight World of Warcraft Classic addon with a small icon-only reload butt
 - Protected-action failures are captured in `ForeverTweaksDiagnostics` SavedVariables, with up to 20 records of addon attribution, action, UI state, and call stack. Reload after reproducing a failure to persist the capture in the client's WTF directory; keep these files outside the repository.
 
 ## UI Source Reference
+
+- `Blizzard_Minimap/Camelot/Diel.lua` creates the day/night indicator as `MinimapCluster.DielFrame`, outside the Minimap widget, at frame level 5. The quest artwork uses a separate UIParent overlay anchored to the minimap.
 
 - Search the [WoW UI source, Forever branch](https://github.com/Gethe/wow-ui-source/tree/forever) when investigating game UI behavior.
 - [BuffFrame.lua](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_BuffFrame/BuffFrame.lua) implements automatic gamepad aura popups: `Update` queues added and updated aura instances through `AddAuraForTooltip`, then `ShowNextAuraForTooltip` displays `BuffFrameTooltip`. The setting is `GamepadShowAutoAuraTooltip`.
@@ -38,4 +40,5 @@ A lightweight World of Warcraft Classic addon with a small icon-only reload butt
 - Do not take screenshots without explicit approval.
 - Keep the reload button small and icon-only.
 - Check the WoW UI source on GitHub in the `forever` branch before implementing or debugging game UI changes.
+- If a fix fails on the first attempt, consult the relevant WoW UI source in the `forever` branch again before attempting another fix.
 - Do not read secret aura IDs or mutate Blizzard aura queues from addon hooks; use the native automatic-tooltip setting.

@@ -1,7 +1,12 @@
 -- Mark the closest unfinished quest POI, using a rim arrow while out of range.
-local arrow = CreateFrame("Frame", "ForeverTweaksQuestArrow", Minimap)
+local arrow = CreateFrame("Frame", "ForeverTweaksQuestArrow", UIParent)
 arrow:SetSize(22, 22)
-arrow:SetFrameLevel(Minimap:GetFrameLevel() + 11)
+-- Diel.lua creates the moon/sun outside the Minimap widget. Keep our artwork
+-- outside that widget too, with independent layering over the minimap cluster.
+arrow:SetFrameStrata("HIGH")
+arrow:SetFixedFrameStrata(true)
+arrow:SetFrameLevel(10)
+arrow:SetFixedFrameLevel(true)
 arrow:EnableMouse(false)
 arrow:Hide()
 
@@ -79,6 +84,8 @@ local function DrawArrow(east, north)
     -- every draw so zoom and indoor/outdoor changes immediately reposition it.
     local inRange = pixelDistance ~= nil and pixelDistance <= mapRadius - 8
     local radius = inRange and pixelDistance or math.max(0, mapRadius - 12)
+    -- UIParent owns the overlay, so explicitly match the minimap's local units.
+    arrow:SetScale(Minimap:GetEffectiveScale() / UIParent:GetEffectiveScale())
     arrow:ClearAllPoints()
     arrow:SetPoint("CENTER", Minimap, "CENTER", x * radius, y * radius)
     marker:SetShown(inRange)
@@ -92,6 +99,9 @@ end
 
 -- Keep the driver separate: a hidden arrow must still discover new objectives.
 local driver = CreateFrame("Frame", nil, Minimap)
+driver:SetScript("OnHide", function()
+    arrow:Hide()
+end)
 driver:RegisterEvent("PLAYER_ENTERING_WORLD")
 driver:RegisterEvent("QUEST_LOG_UPDATE")
 driver:RegisterEvent("QUEST_POI_UPDATE")
