@@ -13,10 +13,15 @@ arrow:Hide()
 local texture = arrow:CreateTexture(nil, "OVERLAY")
 -- Use the native minimap super-tracker artwork.
 texture:SetTexture("Interface\\Minimap\\SuperTrackerArrow")
+texture:SetSnapToPixelGrid(false)
+texture:SetTexelSnappingBias(0)
 texture:SetAllPoints()
 
 local marker = arrow:CreateTexture(nil, "OVERLAY")
 marker:SetTexture("Interface\\Minimap\\Minimap-Waypoint-MapPin-Tracked")
+-- Preserve fractional positions as the map moves beneath this overlay.
+marker:SetSnapToPixelGrid(false)
+marker:SetTexelSnappingBias(0)
 marker:SetSize(21, 21)
 marker:SetPoint("CENTER")
 marker:Hide()
@@ -32,7 +37,7 @@ questName:SetShadowOffset(1, -1)
 local candidates = {}
 local currentMapID
 local mapWidth, mapHeight
-local scanElapsed, drawElapsed = 1, 0
+local scanElapsed = 1
 
 local function IsPublicNumber(value)
     return not (issecretvalue and issecretvalue(value)) and type(value) == "number"
@@ -101,7 +106,6 @@ local function DrawArrow(east, north)
     local radius = inRange and pixelDistance or math.max(0, mapRadius - 12)
     -- UIParent owns the overlay, so explicitly match the minimap's local units.
     arrow:SetScale(Minimap:GetEffectiveScale() / UIParent:GetEffectiveScale())
-    arrow:ClearAllPoints()
     arrow:SetPoint("CENTER", Minimap, "CENTER", x * radius, y * radius)
     marker:SetShown(inRange)
     texture:SetShown(not inRange)
@@ -127,11 +131,7 @@ driver:SetScript("OnEvent", function()
 end)
 driver:SetScript("OnUpdate", function(_, elapsed)
     scanElapsed = scanElapsed + elapsed
-    drawElapsed = drawElapsed + elapsed
-    if drawElapsed < 0.05 then
-        return
-    end
-    drawElapsed = 0
+    -- Follow movement and minimap rotation every frame; only POI scans are throttled.
     local mapID = C_Map.GetBestMapForUnit("player")
     if not mapID then
         arrow:Hide()

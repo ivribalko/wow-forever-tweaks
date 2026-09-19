@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Updated quest navigation every frame and disabled arrow and nearby marker pixel snapping to reduce movement jitter.
+
 - Displayed the arrow’s selected quest name beneath the minimap location name.
 - Added a minimap reload button and nearest quest objective and turn-in navigation.
 - Used the native super-tracker arrow on the minimap rim and tracked waypoint marker for nearby quest destinations.
