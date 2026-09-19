@@ -78,10 +78,12 @@ end)
 
 -- Use Forever's native opt-out: aura IDs can be secret in addon callbacks.
 -- This disables automatic aura popups without reading auras or changing UI queues.
-local auraSettings = CreateFrame("Frame")
-auraSettings:RegisterEvent("PLAYER_LOGIN")
-auraSettings:SetScript("OnEvent", function(self)
+local gamepadSettings = CreateFrame("Frame")
+gamepadSettings:RegisterEvent("PLAYER_LOGIN")
+gamepadSettings:SetScript("OnEvent", function(self)
     C_CVar.SetCVar("GamepadShowAutoAuraTooltip", "0")
+    -- Leave touchpad cursor movement to an external native-mouse mapper.
+    C_CVar.SetCVar("GamePadTouchCursorEnable", "0")
     self:UnregisterEvent("PLAYER_LOGIN")
 end)
 

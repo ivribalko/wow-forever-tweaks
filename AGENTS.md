@@ -13,6 +13,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Shows maximum HP beside the level in friendly and hostile unit tooltips.
 - Binds controller inputs for the world map and inventory; PlayStation touchpad sides require the local mapping described below.
 - Makes the player turn with the gamepad camera while moving, including autorun.
+- Disables native gamepad touchpad cursor control for use with an external mouse mapper.
 - Disables automatic gamepad buff popups while keeping manual buff inspection available.
 - Hides the floating beta Issue Reporter and automatic quest-reward feedback surveys.
 - Captures protected-action diagnostics in source and alpha packages for troubleshooting.
@@ -31,6 +32,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - The button has no text, configuration, or external dependencies.
 - The PlayStation controller's left touchpad click toggles the world map through `PADPADDLE1`; its right touchpad click toggles inventory through `PAD6`. A local `WTF/GamePadConfig_*.json` mapping assigns the left-side input to `PADPADDLE1` and the right-side input to `PAD6`; restart the game after changing that mapping. The addon bindings last only while enabled.
 - Chat backgrounds and decorative borders, including side-button backgrounds, are hidden even on hover. Chat text and controls remain visible; saved background settings are not changed.
+- Native touchpad cursor control is disabled at login and UI reload through `GamePadTouchCursorEnable`. Touchpad click bindings remain configured separately. The setting persists if the addon is disabled; restore it with `/console GamePadTouchCursorEnable 1`.
 - Chat is anchored at the bottom-left after login or UI reload, with space for its side buttons and input box.
 - Chat tabs are invisible until individually hovered, matching UITweaks, including newly opened tabs. They remain clickable.
 - The main chat window and its docked tabs are set to 360 UI units tall, three times the default, once after login or UI reload. Later native layout changes may override this height.

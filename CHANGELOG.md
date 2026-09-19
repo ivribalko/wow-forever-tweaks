@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Disabled native gamepad touchpad cursor control for use with an external mouse mapper.
 - Added movement-based gamepad camera turning for autorun, returning to the native While moving setting when stopped.
 - Removed Quest Next and Quest Prev macros and their quest-cycling commands.
 - Named generated attack macros `+`, with automatic renaming of existing unedited attack macros.
