@@ -7,12 +7,12 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Automatically sells junk and repairs items at merchants.
 - Automatically replaces harmful spell actions with spell-casting macros that start autoattack in combat.
 - Adds a small circular-arrow button at the minimap’s top-right corner to reload the interface.
-- Automatically creates Quest Next and Quest Prev macros to cycle the active quest among visible tracker entries.
 - Removes chat backgrounds and borders, shows chat tabs only on hover, and places a taller chat window at the bottom-left.
 - Smoothly fades player and target frames, cast bars, and gamepad action bars between 40% opacity outside combat and 70% in combat.
 - Shows XP progress as a gold percentage beside the player name and hides the original XP artwork.
 - Shows maximum HP beside the level in friendly and hostile unit tooltips.
 - Binds controller inputs for the world map and inventory; PlayStation touchpad sides require the local mapping described below.
+- Makes the player turn with the gamepad camera while moving, including autorun.
 - Disables automatic gamepad buff popups while keeping manual buff inspection available.
 - Hides the floating beta Issue Reporter and automatic quest-reward feedback surveys.
 - Captures protected-action diagnostics in source and alpha packages for troubleshooting.
@@ -30,12 +30,12 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Restart the game if the newly created addon is absent from the list.
 - The button has no text, configuration, or external dependencies.
 - The PlayStation controller's left touchpad click toggles the world map through `PADPADDLE1`; its right touchpad click toggles inventory through `PAD6`. A local `WTF/GamePadConfig_*.json` mapping assigns the left-side input to `PADPADDLE1` and the right-side input to `PAD6`; restart the game after changing that mapping. The addon bindings last only while enabled.
-- `Quest Next` and `Quest Prev` are account-wide macros created at login, using `/ftnextquest` and `/ftprevquest`. They cycle only quests currently visible in the native tracker, in displayed order, and wrap at either end. Hidden, collapsed, and overflow entries are skipped; an empty or hidden tracker leaves the active quest unchanged. Existing macros with those names are updated. Macro creation waits until combat ends and retries when space becomes available; no setup button is added.
 - Chat backgrounds and decorative borders, including side-button backgrounds, are hidden even on hover. Chat text and controls remain visible; saved background settings are not changed.
 - Chat is anchored at the bottom-left after login or UI reload, with space for its side buttons and input box.
 - Chat tabs are invisible until individually hovered, matching UITweaks, including newly opened tabs. They remain clickable.
 - The main chat window and its docked tabs are set to 360 UI units tall, three times the default, once after login or UI reload. Later native layout changes may override this height.
 - Automatic gamepad aura popups are disabled through `GamepadShowAutoAuraTooltip`, including Plainsrunning stack popups. Manual buff inspection remains available. This client setting persists if the addon is disabled; restore it with `/console GamepadShowAutoAuraTooltip 1`.
+- Gamepad camera turning follows movement, including autorun, both in and out of combat. The addon manages `GamePadTurnWithCamera`: `2` (Always) while moving and `0` (While moving) when stopped, restored to `0` at logout or reload. The native dropdown reflects the temporary value; other dropdown choices are overridden while the addon is enabled. In-game autorun validation is pending.
 - Player and target frames, the player cast bar, and the gamepad action bars are 40% visible outside combat and 70% visible in combat.
 - Combat opacity transitions use a shared 0.45-second cosine ease.
 - Friendly and hostile unit tooltips append maximum health to the native level line, such as `Level 10 - 100 HP`, including controller soft targets. Health is passed directly to Blizzard's text formatter, which supports secret values; frame status-text settings are not changed.
@@ -60,7 +60,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 - Connect the repository to a CurseForge project and select tag-only packaging using the [automatic packaging instructions](https://support.curseforge.com/support/solutions/articles/9000197281). Keep integration tokens in service settings, never in tracked files.
 - Update the changelog before tagging. Use `MAJOR.MINOR.PATCH-beta.NUMBER` for Beta, `MAJOR.MINOR.PATCH` for Release, and tags containing `alpha` for Alpha.
-- Complete in-game acceptance checks before a Release tag, including reload, quest macros, chat, combat fades, XP display, and controller shortcuts. Verify the published file’s game-version labels match Forever.
+- Complete in-game acceptance checks before a Release tag, including reload, chat, combat fades, XP display, and controller shortcuts. Verify the published file’s game-version labels match Forever.
 - Commit and push the intended revision and tag only after manual confirmation. CurseForge packages that revision and substitutes the version.
 
 Source and alpha packages retain protected-action diagnostics. Beta and release packages disable the diagnostic handler through `--@alpha@` markers. Zipping raw source retains diagnostics and does not substitute the version token. The aura-tooltip client setting persists after disabling the addon; restore it with `/console GamepadShowAutoAuraTooltip 1`.
