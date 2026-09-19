@@ -7,6 +7,7 @@ A lightweight World of Warcraft Classic addon with a small icon-only reload butt
 - Enable Forever Tweaks in the character selection AddOns menu.
 - Restart the game if the newly created addon is absent from the list.
 - The button has no text, configuration, or external dependencies.
+- The PlayStation controller's left touchpad click toggles the world map through `PADPADDLE1`; its right touchpad click toggles inventory through `PAD6`. A local `WTF/GamePadConfig_*.json` mapping assigns the left-side input to `PADPADDLE1` and the right-side input to `PAD6`; restart the game after changing that mapping. The addon bindings last only while enabled.
 - A native WoW navigation arrow on the minimap rim points toward the closest native map marker for an incomplete quest in the current zone. Within minimap range, it becomes a native quest-navigation marker at the objective's map position, including on arrival. It draws above the day/night indicator, follows minimap rotation and zoom, skips completed and failed quests, and hides when no location is available. Locations represent Blizzard's quest objectives, not individual live mobs or loot objects.
 - Chat backgrounds and decorative borders, including side-button backgrounds, are hidden even on hover. Chat text and controls remain visible; saved background settings are not changed.
 - Chat is anchored at the bottom-left after login or UI reload, with space for its side buttons and input box.
