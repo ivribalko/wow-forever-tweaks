@@ -33,7 +33,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - The minimap reload button uses a native refresh symbol and the same circular rim as the day/night indicator. The AddOns list uses the bundled circular-arrow artwork.
 - Restart the game if the newly created addon is absent from the list.
 - The button has no text, configuration, or external dependencies.
-- The PlayStation controller's left touchpad click toggles the world map through `PADPADDLE1`; its right touchpad click toggles inventory through `PAD6`. A local `WTF/GamePadConfig_*.json` mapping assigns the left-side input to `PADPADDLE1` and the right-side input to `PAD6`; restart the game after changing that mapping. The addon bindings last only while enabled.
+- The PlayStation controller's left touchpad click toggles the world map through `PADPADDLE1`; its right touchpad click toggles inventory through `PAD6`. A local `WTF/GamePadConfig_*.json` mapping assigns the left-side input to `PADPADDLE1` and the right-side input to `PAD6`; restart the game after changing that mapping. The addon bindings last only while enabled. Restore mappings for DualSense and DualSense Edge with the [controller restore tool](tools/CONTROLLERS.md).
 - Chat backgrounds and decorative borders, including side-button backgrounds, are hidden even on hover. Chat text and controls remain visible; saved background settings are not changed.
 - Native touchpad cursor control is disabled at login and UI reload through `GamePadTouchCursorEnable`. Touchpad click bindings remain configured separately. The setting persists if the addon is disabled; restore it with `/console GamePadTouchCursorEnable 1`.
 - Chat is anchored at the bottom-left after login or UI reload, with space for its side buttons and input box.

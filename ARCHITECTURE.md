@@ -1,5 +1,7 @@
 # Architecture
 
+- `tools/restore-touchpad-config.py` restores left/right touchpad mappings for DualSense and DualSense Edge in the selected client WTF directory, backing up existing configuration and preserving unrelated mappings. `tools/CONTROLLERS.md` documents usage; the tools are excluded from addon packages.
+
 - `AttackMacros.lua` builds spell-rank upgrades from learned, active player spellbook entries using `IsSpellBookItemLowRank`. Each lower rank maps to the unique highest-rank entry with the same name in its skill line; ambiguous names are skipped. Direct spell actions upgrade before macro conversion, and owned macros are edited in place with updated saved bodies and spell IDs. Rank upgrades run independently of the attack-conversion toggle and share its combat, cursor, and temporary-bar guards.
 - `MacroRanks.lua` removes explicit ranks from recognized spell operands in character and account macros. `AttackMacros.lua` supplies localized spell/rank names from the learned player spellbook and invokes it under the shared mutation guards, after migrating owned macros to rankless bodies. The parser preserves conditions and reset prefixes, handles sequence delimiters outside brackets and parentheses, and leaves unrelated commands intact. Macro names and icons are preserved.
 - `tools/test-spell-ranks.lua` exercises macro rewriting, ownership migration, action upgrades, restoration, and combat/cursor guards with mocked game APIs; tooling is excluded from addon packages.
