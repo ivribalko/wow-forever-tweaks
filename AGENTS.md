@@ -4,6 +4,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
+- Automatically sells junk and repairs items at merchants.
 - Adds a small circular-arrow button at the minimap’s top-right corner to reload the interface.
 - Automatically creates Quest Next and Quest Prev macros to cycle the active quest among visible tracker entries.
 - Removes chat backgrounds and borders, shows chat tabs only on hover, and places a taller chat window at the bottom-left.
@@ -16,6 +17,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Usage
 
+- Opening a merchant sells gray-quality items with vendor value and repairs all items using personal gold when the merchant offers repairs and the full cost is affordable. Sale proceeds can fund repairs during the same visit. Guild funds are not used; locked stacks are skipped by the classic bag-selling fallback.
 - Supports WoW Forever beta 1.60.1 (`16001`).
 - Place the `ForeverTweaks` folder in the client’s `Interface/AddOns` directory and enable Forever Tweaks in the AddOns menu.
 - The minimap reload button uses a native refresh symbol and the same circular rim as the day/night indicator. The AddOns list uses the bundled circular-arrow artwork.

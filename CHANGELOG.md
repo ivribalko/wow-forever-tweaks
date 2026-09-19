@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added automatic junk selling and repairs using personal gold at merchants.
 - Limited quest cycling to currently visible tracker entries, excluding hidden, collapsed, and overflow quests.
 
 - Matched the reload button to the minimap day/night indicator with a native circular rim and refresh symbol.

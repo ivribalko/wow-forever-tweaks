@@ -1,5 +1,6 @@
 # Architecture
 
+- `Merchant.lua` handles merchant visits with native bulk junk selling, falling back to gray-quality bag stack sales when bulk selling is disabled. Repairs use personal funds; money updates retry unaffordable repairs until the merchant closes.
 - `ForeverTweaks.toc` declares addon metadata and loads the Lua modules in order.
 - `.pkgmeta` defines CurseForge archive layout and exclusions; `CHANGELOG.md` supplies release notes and `LICENSE` supplies the distribution license. Tag packaging replaces the manifest version token and disables alpha-marked diagnostics in beta and release packages.
 - `ForeverTweaks.lua` creates a button parented to the native minimap, anchors it to the top-right corner, and calls the game's reload API directly from a mouse click.

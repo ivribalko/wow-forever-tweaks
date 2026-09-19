@@ -8,3 +8,4 @@
 ForeverTweaks.lua
 PlayerFrameXP.lua
 QuestMacros.lua
+Merchant.lua
