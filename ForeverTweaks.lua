@@ -85,6 +85,54 @@ auraSettings:SetScript("OnEvent", function(self)
     self:UnregisterEvent("PLAYER_LOGIN")
 end)
 
+-- Unit tooltips can use ordinary text lines and controller soft-target tokens.
+local function IsTooltipValueReadable(value)
+    return not issecretvalue or not issecretvalue(value)
+end
+
+local function GetTooltipHealthUnit(tooltip, data)
+    local _, unit = tooltip:GetUnit()
+    if IsTooltipValueReadable(unit) and unit then
+        return unit
+    end
+    -- Only use a fallback token when its GUID matches the displayed tooltip.
+    if not IsTooltipValueReadable(data.guid) or not data.guid then
+        return
+    end
+    for _, token in ipairs({ "mouseover", "softenemy", "softfriend", "softinteract", "target" }) do
+        local guid = UnitGUID(token)
+        if IsTooltipValueReadable(guid) and guid == data.guid then
+            return token
+        end
+    end
+end
+
+TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tooltip, data)
+    if not tooltip.GetUnit or not tooltip.GetLeftLine then
+        return
+    end
+    local unit = GetTooltipHealthUnit(tooltip, data)
+    if not unit then
+        return
+    end
+    for _, line in ipairs(data.lines or {}) do
+        local label = line.leftText
+        local isLevel = line.type == Enum.TooltipDataLineType.UnitLevel
+        if not isLevel and IsTooltipValueReadable(label) and type(label) == "string" then
+            -- Some client tooltips classify the level as a plain text line.
+            local plain = label:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+            isLevel = plain:find(LEVEL .. " ", 1, true) == 1
+        end
+        if isLevel and line.lineIndex then
+            local text = tooltip:GetLeftLine(line.lineIndex)
+            -- UnitHealthMax can be secret. Pass it straight to Blizzard's supported
+            -- display sink without inspecting, comparing, or concatenating it.
+            text:SetFormattedText("%s - %d HP", label, UnitHealthMax(unit))
+            return
+        end
+    end
+end)
+
 -- Keep the beta's floating Issue Reporter panel hidden when it loads or reopens.
 local hiddenIssueReporter
 local hookedQuestReporter

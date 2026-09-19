@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Named generated attack macros `+`, with automatic renaming of existing unedited attack macros.
+
+- Added maximum HP beside the level in friendly and hostile unit tooltips, including controller soft targets, using native formatting for secret health values.
+- Added automatic harmful-spell macro conversion for keyboard and controller action bars, starting autoattack in combat on button presses, with `/ftattack restore` to restore original spells.
 - Added automatic junk selling and repairs using personal gold at merchants.
 - Limited quest cycling to currently visible tracker entries, excluding hidden, collapsed, and overflow quests.
 

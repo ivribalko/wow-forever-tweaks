@@ -4,8 +4,10 @@
 ## Notes: Quality-of-life tweaks for WoW Forever: minimap reload and quest macros, cleaner chat, combat fades, XP percentage, and controller shortcuts.
 ## Version: @project-version@
 ## SavedVariables: ForeverTweaksDiagnostics
+## SavedVariablesPerCharacter: ForeverTweaksAttackMacros
 
 ForeverTweaks.lua
 PlayerFrameXP.lua
 QuestMacros.lua
 Merchant.lua
+AttackMacros.lua

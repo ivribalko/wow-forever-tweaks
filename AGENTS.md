@@ -5,11 +5,13 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 ## Features
 
 - Automatically sells junk and repairs items at merchants.
+- Automatically replaces harmful spell actions with spell-casting macros that start autoattack in combat.
 - Adds a small circular-arrow button at the minimap’s top-right corner to reload the interface.
 - Automatically creates Quest Next and Quest Prev macros to cycle the active quest among visible tracker entries.
 - Removes chat backgrounds and borders, shows chat tabs only on hover, and places a taller chat window at the bottom-left.
 - Smoothly fades player and target frames, cast bars, and gamepad action bars between 40% opacity outside combat and 70% in combat.
 - Shows XP progress as a gold percentage beside the player name and hides the original XP artwork.
+- Shows maximum HP beside the level in friendly and hostile unit tooltips.
 - Binds controller inputs for the world map and inventory; PlayStation touchpad sides require the local mapping described below.
 - Disables automatic gamepad buff popups while keeping manual buff inspection available.
 - Hides the floating beta Issue Reporter and automatic quest-reward feedback surveys.
@@ -17,6 +19,10 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Usage
 
+- Attack macros are created at login and when action bars or spells change, outside combat with an empty cursor. They cover the ten persistent keyboard pages, standard controller pages, and the active controller stance bar. Other controller stance bars are processed when activated. Temporary vehicle, possession, and override states defer conversion.
+- Each converted spell retains its icon, tooltip, and rank, with `/startattack [@target,combat,harm,nodead]` before `/cast`. The button must still be pressed. Harmful-action classification comes from Blizzard and can include crowd-control abilities; it is not a damage-only filter. Existing macros, items, flyouts, and autoattack/autorepeat spells are skipped.
+- Conversion uses one character macro slot per distinct spell ID, reusing it across bars. Full character macro storage leaves remaining spells unchanged and prints a notice; freeing slots retries conversion. Generated attack macros are all named `+` and are identified by saved ownership and body, rather than by name alone. Existing unedited `FT <spellID>` attack macros are renamed automatically. Edited macro bodies and unrelated macros are left alone.
+- `/ftattack restore` disables conversion for this character and restores unedited generated macros on scanned bars to their original spells, including other controller stance bars when activated. Generated macros remain in macro storage for reuse or manual deletion. `/ftattack on` enables conversion again. Disabling the addon alone leaves the macros on the bars. Ownership and the enabled setting persist in character SavedVariables.
 - Opening a merchant sells gray-quality items with vendor value and repairs all items using personal gold when the merchant offers repairs and the full cost is affordable. Sale proceeds can fund repairs during the same visit. Guild funds are not used; locked stacks are skipped by the classic bag-selling fallback.
 - Supports WoW Forever beta 1.60.1 (`16001`).
 - Place the `ForeverTweaks` folder in the client’s `Interface/AddOns` directory and enable Forever Tweaks in the AddOns menu.
@@ -32,6 +38,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Automatic gamepad aura popups are disabled through `GamepadShowAutoAuraTooltip`, including Plainsrunning stack popups. Manual buff inspection remains available. This client setting persists if the addon is disabled; restore it with `/console GamepadShowAutoAuraTooltip 1`.
 - Player and target frames, the player cast bar, and the gamepad action bars are 40% visible outside combat and 70% visible in combat.
 - Combat opacity transitions use a shared 0.45-second cosine ease.
+- Friendly and hostile unit tooltips append maximum health to the native level line, such as `Level 10 - 100 HP`, including controller soft targets. Health is passed directly to Blizzard's text formatter, which supports secret values; frame status-text settings are not changed.
 - XP progress appears as a gold percentage beside the player name, following UITweaks. The original XP artwork is hidden; other status bars remain available. The percentage hides when XP is disabled, at the level cap, or while the player frame shows a vehicle.
 - The floating Issue Reporter panel is hidden.
 - The automatic quest-reward feedback survey ("Did you experience any issues?") is hidden without submitting a report.
