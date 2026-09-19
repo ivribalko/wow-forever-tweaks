@@ -1,10 +1,10 @@
 ## Interface: 16001
 ## Title: Forever Tweaks
 ## IconTexture: Interface\AddOns\ForeverTweaks\Reload.tga
-## Notes: Quality-of-life tweaks for WoW Forever: minimap reload and quest navigation, cleaner chat, combat fades, XP percentage, and controller shortcuts.
+## Notes: Quality-of-life tweaks for WoW Forever: minimap reload and quest macros, cleaner chat, combat fades, XP percentage, and controller shortcuts.
 ## Version: @project-version@
 ## SavedVariables: ForeverTweaksDiagnostics
 
 ForeverTweaks.lua
 PlayerFrameXP.lua
-QuestArrow.lua
+QuestMacros.lua

@@ -3,13 +3,10 @@
 ## Unreleased
 
 - Matched the reload button to the minimap day/night indicator with a native circular rim and refresh symbol.
-- Updated quest navigation every frame and disabled arrow and nearby marker pixel snapping to reduce movement jitter.
-
-- Displayed the arrow’s selected quest name beneath the minimap location name.
-- Added a minimap reload button and nearest quest objective and turn-in navigation.
-- Used the native super-tracker arrow on the minimap rim and tracked waypoint marker for nearby quest destinations.
+- Added a minimap reload button.
+- Replaced custom quest navigation and tracker fading with automatically created Quest Next and Quest Prev macros adapted from UITweaks.
 - Simplified chat backgrounds and tabs, with a taller bottom-left chat layout.
-- Added combat fades for player, target, casting, action bars, and quest tracking.
+- Added combat fades for player, target, casting, and action bars.
 - Displayed XP percentage beside the player name.
 - Added controller shortcuts for the map and inventory.
 - Disabled automatic gamepad aura popups and hid beta feedback panels.

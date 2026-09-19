@@ -5,10 +5,9 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 ## Features
 
 - Adds a small circular-arrow button at the minimap’s top-right corner to reload the interface.
-- Points toward the closest quest objective or completed quest’s turn-in location in the current zone, with a minimap marker when it is nearby.
+- Automatically creates Quest Next and Quest Prev macros to cycle the active watched quest.
 - Removes chat backgrounds and borders, shows chat tabs only on hover, and places a taller chat window at the bottom-left.
 - Smoothly fades player and target frames, cast bars, and gamepad action bars between 40% opacity outside combat and 70% in combat.
-- Fades the quest tracker out during combat and back in afterward.
 - Shows XP progress as a gold percentage beside the player name and hides the original XP artwork.
 - Binds controller inputs for the world map and inventory; PlayStation touchpad sides require the local mapping described below.
 - Disables automatic gamepad buff popups while keeping manual buff inspection available.
@@ -23,14 +22,14 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Restart the game if the newly created addon is absent from the list.
 - The button has no text, configuration, or external dependencies.
 - The PlayStation controller's left touchpad click toggles the world map through `PADPADDLE1`; its right touchpad click toggles inventory through `PAD6`. A local `WTF/GamePadConfig_*.json` mapping assigns the left-side input to `PADPADDLE1` and the right-side input to `PAD6`; restart the game after changing that mapping. The addon bindings last only while enabled.
-- The native super-tracker arrow on the minimap rim points toward the closest native map marker for a quest objective or completed quest’s turn-in location in the current zone. The selected quest name appears below the location name above the minimap. Within minimap range, it becomes a native tracked waypoint marker at the objective's map position, including on arrival. It draws above the day/night indicator, follows minimap rotation and zoom, skips failed quests and quests no longer in the quest log, and hides when no location is available. Locations represent Blizzard's quest objectives, not individual live mobs or loot objects.
+- `Quest Next` and `Quest Prev` are account-wide macros created at login, using `/ftnextquest` and `/ftprevquest`. They cycle watched quests in native tracker order and wrap at either end. Existing macros with those names are updated. Macro creation waits until combat ends and retries when space becomes available; no setup button is added.
 - Chat backgrounds and decorative borders, including side-button backgrounds, are hidden even on hover. Chat text and controls remain visible; saved background settings are not changed.
 - Chat is anchored at the bottom-left after login or UI reload, with space for its side buttons and input box.
 - Chat tabs are invisible until individually hovered, matching UITweaks, including newly opened tabs. They remain clickable.
 - The main chat window and its docked tabs are set to 360 UI units tall, three times the default, once after login or UI reload. Later native layout changes may override this height.
 - Automatic gamepad aura popups are disabled through `GamepadShowAutoAuraTooltip`, including Plainsrunning stack popups. Manual buff inspection remains available. This client setting persists if the addon is disabled; restore it with `/console GamepadShowAutoAuraTooltip 1`.
 - Player and target frames, the player cast bar, and the gamepad action bars are 40% visible outside combat and 70% visible in combat.
-- Combat opacity transitions use a shared 0.45-second cosine ease. The quest tracker fades completely transparent in combat and fully opaque outside combat using the same timing; its native visibility and interaction state are preserved.
+- Combat opacity transitions use a shared 0.45-second cosine ease.
 - XP progress appears as a gold percentage beside the player name, following UITweaks. The original XP artwork is hidden; other status bars remain available. The percentage hides when XP is disabled, at the level cap, or while the player frame shows a vehicle.
 - The floating Issue Reporter panel is hidden.
 - The automatic quest-reward feedback survey ("Did you experience any issues?") is hidden without submitting a report.
@@ -38,7 +37,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## UI Source Reference
 
-- `Blizzard_Minimap/Camelot/Diel.lua` creates the day/night indicator as `MinimapCluster.DielFrame`, outside the Minimap widget, at frame level 5. The quest artwork uses a separate UIParent overlay anchored to the minimap.
+- `Blizzard_Minimap/Camelot/Diel.lua` creates the day/night indicator as `MinimapCluster.DielFrame`, outside the Minimap widget, at frame level 5.
 
 - Search the [WoW UI source, Forever branch](https://github.com/Gethe/wow-ui-source/tree/forever) when investigating game UI behavior.
 - [BuffFrame.lua](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_BuffFrame/BuffFrame.lua) implements automatic gamepad aura popups: `Update` queues added and updated aura instances through `AddAuraForTooltip`, then `ShowNextAuraForTooltip` displays `BuffFrameTooltip`. The setting is `GamepadShowAutoAuraTooltip`.
@@ -52,7 +51,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 - Connect the repository to a CurseForge project and select tag-only packaging using the [automatic packaging instructions](https://support.curseforge.com/support/solutions/articles/9000197281). Keep integration tokens in service settings, never in tracked files.
 - Update the changelog before tagging. Use `MAJOR.MINOR.PATCH-beta.NUMBER` for Beta, `MAJOR.MINOR.PATCH` for Release, and tags containing `alpha` for Alpha.
-- Complete in-game acceptance checks before a Release tag, including reload, quest navigation, chat, combat fades, XP display, and controller shortcuts. Verify the published file’s game-version labels match Forever.
+- Complete in-game acceptance checks before a Release tag, including reload, quest macros, chat, combat fades, XP display, and controller shortcuts. Verify the published file’s game-version labels match Forever.
 - Commit and push the intended revision and tag only after manual confirmation. CurseForge packages that revision and substitutes the version.
 
 Source and alpha packages retain protected-action diagnostics. Beta and release packages disable the diagnostic handler through `--@alpha@` markers. Zipping raw source retains diagnostics and does not substitute the version token. The aura-tooltip client setting persists after disabling the addon; restore it with `/console GamepadShowAutoAuraTooltip 1`.

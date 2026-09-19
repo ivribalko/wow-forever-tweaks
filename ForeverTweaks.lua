@@ -165,7 +165,6 @@ local combatOpacityFrames = {
     "GamepadMainActionBarFrame",
     "PlayerCastingBarFrame",
     "GamepadPlayerCastingBarFrame",
-    "ObjectiveTrackerFrame",
 }
 local hookedOpacityFrames = setmetatable({}, { __mode = "k" })
 local outOfCombatAlpha = 0.4
@@ -182,11 +181,7 @@ local settingCastBarAlpha = false
 
 local function ApplyCombatOpacity(frame)
     settingCastBarAlpha = true
-    if frame == ObjectiveTrackerFrame then
-        frame:SetAlpha(1 - combatBlend)
-    else
-        frame:SetAlpha(currentCombatAlpha * (castBarNativeAlpha[frame] or 1))
-    end
+    frame:SetAlpha(currentCombatAlpha * (castBarNativeAlpha[frame] or 1))
     settingCastBarAlpha = false
 end
 
