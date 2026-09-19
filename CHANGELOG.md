@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Limited quest cycling to currently visible tracker entries, excluding hidden, collapsed, and overflow quests.
+
 - Matched the reload button to the minimap day/night indicator with a native circular rim and refresh symbol.
 - Added a minimap reload button.
 - Replaced custom quest navigation and tracker fading with automatically created Quest Next and Quest Prev macros adapted from UITweaks.

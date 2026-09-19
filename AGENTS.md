@@ -5,7 +5,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 ## Features
 
 - Adds a small circular-arrow button at the minimap’s top-right corner to reload the interface.
-- Automatically creates Quest Next and Quest Prev macros to cycle the active watched quest.
+- Automatically creates Quest Next and Quest Prev macros to cycle the active quest among visible tracker entries.
 - Removes chat backgrounds and borders, shows chat tabs only on hover, and places a taller chat window at the bottom-left.
 - Smoothly fades player and target frames, cast bars, and gamepad action bars between 40% opacity outside combat and 70% in combat.
 - Shows XP progress as a gold percentage beside the player name and hides the original XP artwork.
@@ -22,7 +22,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Restart the game if the newly created addon is absent from the list.
 - The button has no text, configuration, or external dependencies.
 - The PlayStation controller's left touchpad click toggles the world map through `PADPADDLE1`; its right touchpad click toggles inventory through `PAD6`. A local `WTF/GamePadConfig_*.json` mapping assigns the left-side input to `PADPADDLE1` and the right-side input to `PAD6`; restart the game after changing that mapping. The addon bindings last only while enabled.
-- `Quest Next` and `Quest Prev` are account-wide macros created at login, using `/ftnextquest` and `/ftprevquest`. They cycle watched quests in native tracker order and wrap at either end. Existing macros with those names are updated. Macro creation waits until combat ends and retries when space becomes available; no setup button is added.
+- `Quest Next` and `Quest Prev` are account-wide macros created at login, using `/ftnextquest` and `/ftprevquest`. They cycle only quests currently visible in the native tracker, in displayed order, and wrap at either end. Hidden, collapsed, and overflow entries are skipped; an empty or hidden tracker leaves the active quest unchanged. Existing macros with those names are updated. Macro creation waits until combat ends and retries when space becomes available; no setup button is added.
 - Chat backgrounds and decorative borders, including side-button backgrounds, are hidden even on hover. Chat text and controls remain visible; saved background settings are not changed.
 - Chat is anchored at the bottom-left after login or UI reload, with space for its side buttons and input box.
 - Chat tabs are invisible until individually hovered, matching UITweaks, including newly opened tabs. They remain clickable.

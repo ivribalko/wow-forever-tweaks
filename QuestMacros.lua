@@ -1,31 +1,36 @@
--- Cycle the active quest in tracker order, following UITweaks.
-local function GetWatchedQuestIDs()
-    local watchedQuestIDs = {}
-    for index = 1, C_QuestLog.GetNumQuestWatches() do
-        local questID = C_QuestLog.GetQuestIDForQuestWatchIndex(index)
-        if questID then
-            watchedQuestIDs[#watchedQuestIDs + 1] = questID
-        end
-    end
-
-    local orderedQuestIDs = {}
+-- Read the native layout rather than the watch list, which includes overflow quests.
+local function GetVisibleQuestIDs()
+    local visibleBlocks = {}
+    local seen = {}
     for _, name in ipairs({ "CampaignQuestObjectiveTracker", "QuestObjectiveTracker" }) do
         local module = _G[name]
-        if module and module.BuildQuestWatchInfos then
-            for _, info in ipairs(module:BuildQuestWatchInfos()) do
-                local quest = info.quest
-                local questID = quest and quest.GetID and quest:GetID()
-                if questID then
-                    orderedQuestIDs[#orderedQuestIDs + 1] = questID
+        local block = module and module.firstBlock
+        while block do
+            local questID = block.id
+            -- Cached blocks can remain briefly after a quest leaves the log.
+            if block.used and block:IsVisible() and questID and not seen[questID]
+                and C_QuestLog.IsOnQuest(questID) then
+                local top = block:GetTop()
+                if top then
+                    visibleBlocks[#visibleBlocks + 1] = { questID = questID, top = top }
+                    seen[questID] = true
                 end
             end
+            block = block.nextBlock
         end
     end
-    return #orderedQuestIDs > 0 and orderedQuestIDs or watchedQuestIDs
+    table.sort(visibleBlocks, function(left, right)
+        return left.top > right.top
+    end)
+    local questIDs = {}
+    for _, block in ipairs(visibleBlocks) do
+        questIDs[#questIDs + 1] = block.questID
+    end
+    return questIDs
 end
 
 local function SelectQuest(direction)
-    local questIDs = GetWatchedQuestIDs()
+    local questIDs = GetVisibleQuestIDs()
     if #questIDs == 0 then
         return
     end
