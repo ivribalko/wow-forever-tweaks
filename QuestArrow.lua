@@ -1,17 +1,19 @@
--- Point along the minimap rim toward the closest native unfinished quest POI.
+-- Mark the closest unfinished quest POI, using a rim arrow while out of range.
 local arrow = CreateFrame("Frame", "ForeverTweaksQuestArrow", Minimap)
 arrow:SetSize(22, 22)
 arrow:SetFrameLevel(Minimap:GetFrameLevel() + 11)
 arrow:EnableMouse(false)
 arrow:Hide()
 
-local strokes = {}
-for index = 1, 3 do
-    local line = arrow:CreateLine(nil, "OVERLAY")
-    line:SetThickness(3)
-    line:SetColorTexture(1, 0.82, 0.12, 1)
-    strokes[index] = line
-end
+local texture = arrow:CreateTexture(nil, "OVERLAY")
+texture:SetAtlas("Navigation-Tracked-Arrow")
+texture:SetAllPoints()
+
+local marker = arrow:CreateTexture(nil, "OVERLAY")
+marker:SetAtlas("Navigation-Tracked-Icon")
+marker:SetSize(14, 14)
+marker:SetPoint("CENTER")
+marker:Hide()
 
 local candidates = {}
 local currentMapID
@@ -56,8 +58,9 @@ local function ScanQuests(mapID)
 end
 
 local function DrawArrow(east, north)
-    local angle = math.atan2(north, east)
-    if GetCVarBool("rotateMinimap") then
+    local distance = math.sqrt(east * east + north * north)
+    local angle = distance > 0 and math.atan2(north, east) or 0
+    if GetCVarBool("rotateMinimap") and not C_Minimap.IsRotateMinimapIgnored() then
         local facing = GetPlayerFacing()
         if not IsPublicNumber(facing) then
             arrow:Hide()
@@ -66,16 +69,24 @@ local function DrawArrow(east, north)
         angle = angle - facing
     end
     local x, y = math.cos(angle), math.sin(angle)
-    local radius = math.max(0, math.min(Minimap:GetWidth(), Minimap:GetHeight()) / 2 - 12)
+    local mapRadius = math.min(Minimap:GetWidth(), Minimap:GetHeight()) / 2
+    local viewRadius = C_Minimap.GetViewRadius()
+    local pixelDistance
+    if IsPublicNumber(viewRadius) and viewRadius > 0 then
+        pixelDistance = distance * mapRadius / viewRadius
+    end
+    -- Leave room for the full marker inside the mask. Read the native range on
+    -- every draw so zoom and indoor/outdoor changes immediately reposition it.
+    local inRange = pixelDistance ~= nil and pixelDistance <= mapRadius - 8
+    local radius = inRange and pixelDistance or math.max(0, mapRadius - 12)
     arrow:ClearAllPoints()
     arrow:SetPoint("CENTER", Minimap, "CENTER", x * radius, y * radius)
-    -- A code-drawn chevron and stem avoid depending on a client texture atlas.
-    strokes[1]:SetStartPoint("CENTER", arrow, x * 8, y * 8)
-    strokes[1]:SetEndPoint("CENTER", arrow, -x * 3 - y * 6, -y * 3 + x * 6)
-    strokes[2]:SetStartPoint("CENTER", arrow, x * 8, y * 8)
-    strokes[2]:SetEndPoint("CENTER", arrow, -x * 3 + y * 6, -y * 3 - x * 6)
-    strokes[3]:SetStartPoint("CENTER", arrow, x * 6, y * 6)
-    strokes[3]:SetEndPoint("CENTER", arrow, -x * 8, -y * 8)
+    marker:SetShown(inRange)
+    texture:SetShown(not inRange)
+    if not inRange then
+        -- Match the native SuperTrackedFrame arrow's up-facing atlas and rotation.
+        texture:SetRotation(-Vector2D_CalculateAngleBetween(x, y, 0, 1))
+    end
     arrow:Show()
 end
 
@@ -125,9 +136,8 @@ driver:SetScript("OnUpdate", function(_, elapsed)
             closestDistance, closestEast, closestNorth = distance, east, north
         end
     end
-    -- At the marker there is no meaningful bearing; keep the objective eligible
-    -- until its quest progress changes rather than skipping an unfinished task.
-    if not closestDistance or closestDistance < 1 then
+    -- Keep the marker at the player's position on arrival until progress changes.
+    if not closestDistance then
         arrow:Hide()
         return
     end
