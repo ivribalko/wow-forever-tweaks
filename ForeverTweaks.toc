@@ -10,4 +10,5 @@ ForeverTweaks.lua
 GamepadCamera.lua
 PlayerFrameXP.lua
 Merchant.lua
+MacroRanks.lua
 AttackMacros.lua

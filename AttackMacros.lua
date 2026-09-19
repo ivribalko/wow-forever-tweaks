@@ -1,4 +1,5 @@
--- Convert harmful spell actions outside combat; execution remains a player action.
+-- Upgrade spell ranks and convert harmful actions outside combat.
+local _, addon = ...
 local events = CreateFrame("Frame")
 local state, queued, working, warned
 
@@ -53,14 +54,73 @@ local function RenameOwnedMacros()
     end
 end
 
-local function EnsureMacro(spellID)
+-- Use Blizzard's rank classification, without parsing localized rank text.
+local function SpellUpgrades()
+    local upgrades, rankless = {}, {}
+    local bank = Enum.SpellBookSpellBank.Player
+    for lineIndex = 1, C_SpellBook.GetNumSpellBookSkillLines() do
+        local line = C_SpellBook.GetSpellBookSkillLineInfo(lineIndex)
+        if line then
+            local highest, lower = {}, {}
+            for slot = line.itemIndexOffset + 1, line.itemIndexOffset + line.numSpellBookItems do
+                local info = C_SpellBook.GetSpellBookItemInfo(slot, bank)
+                if info and info.itemType == Enum.SpellBookItemType.Spell
+                    and info.spellID and not info.isPassive and not info.isOffSpec then
+                    local rank = C_Spell.GetSpellSubtext(info.spellID)
+                    if rank and rank ~= "" then
+                        rankless[(info.name .. "(" .. rank .. ")"):lower()] = info.name
+                    end
+                    if C_SpellBook.IsSpellBookItemLowRank(slot, bank) then
+                        lower[info.spellID] = info.name
+                    elseif highest[info.name] == nil then
+                        highest[info.name] = info.spellID
+                    elseif highest[info.name] ~= info.spellID then
+                        -- Ambiguous same-name abilities are left alone.
+                        highest[info.name] = false
+                    end
+                end
+            end
+            for spellID, name in pairs(lower) do
+                upgrades[spellID] = highest[name] or nil
+            end
+        end
+    end
+    return upgrades, rankless
+end
+
+local function MacroContents(spellID)
     local info = C_Spell.GetSpellInfo(spellID)
     if not info then return end
     local spell = info.name
-    local rank = C_Spell.GetSpellSubtext(spellID)
-    if rank and rank ~= "" then spell = spell .. "(" .. rank .. ")" end
     local body = "#showtooltip " .. spell .. "\n/startattack [@target,combat,harm,nodead]\n/cast " .. spell
     if #body > 255 then return end
+    return body, info.iconID
+end
+
+local function UpgradeOwnedMacros(upgrades)
+    local base = Constants.MacroConsts.MAX_ACCOUNT_MACROS
+    local _, count = GetNumMacros()
+    for _, record in pairs(state.macros) do
+        local spellID = upgrades[record.spellID] or record.spellID
+        local body, icon = MacroContents(spellID)
+        if body and (record.body ~= body or record.spellID ~= spellID) then
+            local changed = false
+            for index = base + 1, base + count do
+                if OwnedMacro(index) == record then
+                    EditMacro(index, nil, icon, body)
+                    changed = true
+                end
+            end
+            if changed then
+                record.spellID, record.body = spellID, body
+            end
+        end
+    end
+end
+
+local function EnsureMacro(spellID)
+    local body, icon = MacroContents(spellID)
+    if not body then return end
     -- Names are shared; resolve each spell by its saved body, never by name alone.
     local key = "FT " .. spellID
     local base = Constants.MacroConsts.MAX_ACCOUNT_MACROS
@@ -77,7 +137,7 @@ local function EnsureMacro(spellID)
         end
         return
     end
-    local index = CreateMacro("+", info.iconID, body, true)
+    local index = CreateMacro("+", icon, body, true)
     if index then
         state.macros[key] = { spellID = spellID, body = body }
         return index
@@ -91,8 +151,17 @@ local function Synchronize()
         or C_ActionBar.HasTempShapeshiftActionBar() then return end
     working = true
     RenameOwnedMacros()
+    local upgrades, rankless = SpellUpgrades()
+    UpgradeOwnedMacros(upgrades)
+    addon.UpgradeCustomMacroRanks(rankless, OwnedMacro)
     for _, slot in ipairs(ActionSlots()) do
         local kind, id = GetActionInfo(slot)
+        if kind == "spell" and upgrades[id] then
+            C_Spell.PickupSpell(upgrades[id])
+            if GetCursorInfo() == "spell" then PlaceAction(slot) end
+            ClearCursor()
+            kind, id = GetActionInfo(slot)
+        end
         if state.enabled and kind == "spell" and C_ActionBar.IsHarmfulAction(slot, true)
             and not C_Spell.IsAutoAttackSpell(id) and not C_Spell.IsAutoRepeatSpell(id) then
             local index = EnsureMacro(id)
@@ -129,7 +198,7 @@ SlashCmdList.FOREVERTWEAKSATTACK = function(message)
     local command = message:lower():match("^%s*(.-)%s*$")
     if command == "restore" then
         state.enabled = false
-        print("Forever Tweaks: Attack macro conversion disabled; original spells restore when out of combat with an empty cursor.")
+        print("Forever Tweaks: Attack macro conversion disabled; spells restore at their highest learned rank when out of combat with an empty cursor.")
     elseif command == "on" then
         state.enabled = true
         warned = false

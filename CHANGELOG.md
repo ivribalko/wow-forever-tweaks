@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added automatic highest-learned-rank upgrades for action-bar spells, including heals and buffs. Generated macros use rankless spell names; recognized spell references in custom character and account macros also have explicit ranks removed.
 - Disabled native gamepad touchpad cursor control for use with an external mouse mapper.
 - Added movement-based gamepad camera turning for autorun, returning to the native While moving setting when stopped.
 - Removed Quest Next and Quest Prev macros and their quest-cycling commands.
