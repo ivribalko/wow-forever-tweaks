@@ -6,3 +6,4 @@
 
 ForeverTweaks.lua
 PlayerFrameXP.lua
+QuestArrow.lua
