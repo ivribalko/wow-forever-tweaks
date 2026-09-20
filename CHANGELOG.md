@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- Sorted tracked quests by quest level, lowest first, preserving native order for matching levels.
+- Corrected native watch insertion order so quest levels display ascending, with equal-level order preserved.
+
+- Applied quest-level ordering to the complete native watch list so lower-level quests can appear ahead of quests previously hidden by tracker overflow. Native watch APIs replace tracker-method overrides; reordering waits until combat ends and preserves final watch membership and the super-tracked quest. In-game validation is pending.
 
 - Added automatic highest-learned-rank upgrades for action-bar spells, including heals and buffs. Generated macros use rankless spell names; recognized spell references in custom character and account macros also have explicit ranks removed.
 - Disabled native gamepad touchpad cursor control for use with an external mouse mapper.

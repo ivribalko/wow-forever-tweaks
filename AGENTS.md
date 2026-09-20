@@ -4,7 +4,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
-- Sorts tracked quests by quest level, lowest first.
+- Sorts the full tracked-quest list by quest level, lowest first.
 
 - Automatically sells junk and repairs items at merchants.
 - Automatically replaces harmful spell actions with spell-casting macros that start autoattack in combat.
@@ -23,7 +23,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Usage
 
-- The quest tracker lists watched quests in ascending quest-level order, preserving native order for equal levels and placing unavailable levels last. Existing tracking choices, automatic tracking settings, and native quest filters remain unchanged.
+- The full native watch list is reordered by ascending quest level before tracker layout chooses which quests fit. Equal levels keep their existing relative order; unavailable levels sort last. Reordering removes and immediately re-adds each watched quest through native APIs, preserving final membership and the super-tracked quest. It waits until combat ends. Native quest filters and special quest priorities still apply. The addon reports if the client rejects the requested order; in-game validation is pending.
 
 - Attack macros are created at login and when action bars or spells change, outside combat with an empty cursor. They cover the ten persistent keyboard pages, standard controller pages, and the active controller stance bar. Other controller stance bars are processed when activated. Temporary vehicle, possession, and override states defer conversion.
 - Spells on scanned keyboard and controller bars upgrade to their highest learned rank, including heals and buffs. Unedited generated attack macros upgrade in place without requiring a free macro slot. Updates run outside combat with an empty cursor after login, spell learning, and bar changes; inactive controller stance bars update when activated. Pet bars and flyouts are left alone. Ambiguous same-name abilities are skipped. Rank upgrades remain enabled when attack macro conversion is disabled.

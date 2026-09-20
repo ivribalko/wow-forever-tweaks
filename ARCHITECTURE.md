@@ -1,6 +1,6 @@
 # Architecture
 
-- `QuestTracker.lua` wraps the quest tracker instance's native watch-list builder after it loads. It sorts the filtered result by quest difficulty level, using native list positions to break ties and placing unavailable levels last. It leaves watch membership and automatic tracking settings intact.
+- `QuestTracker.lua` reads and stably sorts the full native watch list in a private table, then reorders watches through native remove/add APIs outside combat. Watches are inserted in reverse sorted order because the native API prepends them. Each removed watch is immediately restored, and the super-tracked quest is restored after the batch. Events debounce the work; a secure post-hook on native watch sorting reapplies level order after zone sorting. Verification suppresses repeat attempts for a rejected order. Native tracker methods, quest block data, and click handlers are untouched; native layout handles overflow and special quest priorities.
 
 - `tools/restore-touchpad-config.py` restores left/right touchpad mappings for DualSense and DualSense Edge in the selected client WTF directory, backing up existing configuration and preserving unrelated mappings. `tools/CONTROLLERS.md` documents usage; the tools are excluded from addon packages.
 
