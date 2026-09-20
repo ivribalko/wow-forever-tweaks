@@ -30,3 +30,5 @@
 - `AGENTS.md` contains project usage and repository rules; `README.md` is a relative symbolic link to it.
 
 The button follows the minimap's position, scale, and visibility. Protected-action events retain bounded diagnostics in client-managed SavedVariables for investigating blocked quest and menu actions.
+
+The controller restore tool also maps raw Share/Create input 4 to `PADBACK` on both DualSense models, supplying native menu actions after the touchpad inputs are reassigned. This stays in device configuration rather than overriding individual menu bindings.

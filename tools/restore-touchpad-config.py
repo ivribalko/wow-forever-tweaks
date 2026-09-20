@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Restore DualSense touchpad mappings in a selected Forever client's WTF folder."""
+"""Restore DualSense Share and touchpad mappings in a selected Forever client's WTF folder."""
 import argparse
 import datetime
 import json
@@ -22,7 +22,8 @@ for product_id in (3302, 3570):
         config = {'vendorID': 1356, 'productID': product_id, 'rawButtonMappings': []}
         data['configs'].append(config)
     mappings = config.setdefault('rawButtonMappings', [])
-    for index, button, comment in ((21, 'PADPADDLE1', 'TouchPad left side'),
+    for index, button, comment in ((4, 'PADBACK', 'Share/Create menu action'),
+                                    (21, 'PADPADDLE1', 'TouchPad left side'),
                                     (22, 'PAD6', 'TouchPad right side')):
         mappings[:] = [entry for entry in mappings if entry.get('rawIndex') != index]
         mappings.append({'rawIndex': index, 'button': button, 'comment': comment})
@@ -30,4 +31,4 @@ if path.exists():
     stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S-%f')
     shutil.copy2(path, path.with_suffix('.json.backup-' + stamp))
 path.write_text(json.dumps(data, indent=4) + '\n')
-print('Saved touchpad mappings. Restart the client to load them.')
+print('Saved Share and touchpad mappings. Restart the client to load them.')
