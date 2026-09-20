@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Sorted tracked quests by quest level, lowest first, preserving native order for matching levels.
+
 - Added automatic highest-learned-rank upgrades for action-bar spells, including heals and buffs. Generated macros use rankless spell names; recognized spell references in custom character and account macros also have explicit ranks removed.
 - Disabled native gamepad touchpad cursor control for use with an external mouse mapper.
 - Added movement-based gamepad camera turning for autorun, returning to the native While moving setting when stopped.

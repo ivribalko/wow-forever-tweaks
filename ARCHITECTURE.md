@@ -1,5 +1,7 @@
 # Architecture
 
+- `QuestTracker.lua` wraps the quest tracker instance's native watch-list builder after it loads. It sorts the filtered result by quest difficulty level, using native list positions to break ties and placing unavailable levels last. It leaves watch membership and automatic tracking settings intact.
+
 - `tools/restore-touchpad-config.py` restores left/right touchpad mappings for DualSense and DualSense Edge in the selected client WTF directory, backing up existing configuration and preserving unrelated mappings. `tools/CONTROLLERS.md` documents usage; the tools are excluded from addon packages.
 
 - `AttackMacros.lua` builds spell-rank upgrades from learned, active player spellbook entries using `IsSpellBookItemLowRank`. Each lower rank maps to the unique highest-rank entry with the same name in its skill line; ambiguous names are skipped. Direct spell actions upgrade before macro conversion, and owned macros are edited in place with updated saved bodies and spell IDs. Rank upgrades run independently of the attack-conversion toggle and share its combat, cursor, and temporary-bar guards.

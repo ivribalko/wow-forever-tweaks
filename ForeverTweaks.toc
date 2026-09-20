@@ -8,6 +8,7 @@
 
 ForeverTweaks.lua
 GamepadCamera.lua
+QuestTracker.lua
 PlayerFrameXP.lua
 Merchant.lua
 MacroRanks.lua

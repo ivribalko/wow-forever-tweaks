@@ -4,6 +4,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
+- Sorts tracked quests by quest level, lowest first.
+
 - Automatically sells junk and repairs items at merchants.
 - Automatically replaces harmful spell actions with spell-casting macros that start autoattack in combat.
 - Automatically upgrades action-bar spells and makes spell references in macros rankless to use the highest learned rank.
@@ -20,6 +22,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Captures protected-action diagnostics in source and alpha packages for troubleshooting.
 
 ## Usage
+
+- The quest tracker lists watched quests in ascending quest-level order, preserving native order for equal levels and placing unavailable levels last. Existing tracking choices, automatic tracking settings, and native quest filters remain unchanged.
 
 - Attack macros are created at login and when action bars or spells change, outside combat with an empty cursor. They cover the ten persistent keyboard pages, standard controller pages, and the active controller stance bar. Other controller stance bars are processed when activated. Temporary vehicle, possession, and override states defer conversion.
 - Spells on scanned keyboard and controller bars upgrade to their highest learned rank, including heals and buffs. Unedited generated attack macros upgrade in place without requiring a free macro slot. Updates run outside combat with an empty cursor after login, spell learning, and bar changes; inactive controller stance bars update when activated. Pet bars and flyouts are left alone. Ambiguous same-name abilities are skipped. Rank upgrades remain enabled when attack macro conversion is disabled.
