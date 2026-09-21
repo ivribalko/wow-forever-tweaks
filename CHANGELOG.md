@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Set chat messages to begin fading after 15 seconds.
+
 - Cleared unsent chat text when pressing gamepad Back while retaining the selected chat channel.
 
 - Raised the bottom-left chat window to leave space for the gamepad button-hint panel.

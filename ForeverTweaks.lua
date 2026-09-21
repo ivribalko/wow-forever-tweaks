@@ -87,11 +87,21 @@ local function HookChatGamepadBack(chatFrame)
     hookedChatBackFrames[chatFrame] = true
 end
 
+-- Set message lifetime once per window, preserving native focus and scroll behavior.
+local configuredChatFadeFrames = setmetatable({}, { __mode = "k" })
+local function ConfigureChatMessageFade(chatFrame)
+    if chatFrame and not configuredChatFadeFrames[chatFrame] then
+        chatFrame:SetTimeVisible(15)
+        configuredChatFadeFrames[chatFrame] = true
+    end
+end
+
 -- Keep chat tabs clickable, revealing each only while hovered, over a clear background.
 local function UpdateChatTabVisibility()
     for _, name in ipairs(CHAT_FRAMES or {}) do
         HideChatBackground(name)
         HookChatGamepadBack(_G[name])
+        ConfigureChatMessageFade(_G[name])
         local tab = _G[name .. "Tab"]
         if tab then
             tab:SetAlpha(tab:IsMouseOver() and 1 or 0)
