@@ -56,10 +56,42 @@ local function HideChatBackground(name)
     end
 end
 
+-- Preserve the selected gamepad chat channel and clear drafts canceled with Back.
+local hookedChatBackFrames = setmetatable({}, { __mode = "k" })
+local function HookChatGamepadBack(chatFrame)
+    if not chatFrame or hookedChatBackFrames[chatFrame]
+        or type(chatFrame.SmartNavigationCloseHandler) ~= "function" then
+        return
+    end
+
+    local editBox = chatFrame.editBox
+    if not editBox then
+        return
+    end
+
+    -- Native focus loss can restore the sticky type before the Back post-hook runs.
+    hooksecurefunc(editBox, "SetChatType", function(self, chatType)
+        if InputUtil.IsGamepadUIEnabled() then
+            self:SetStickyType(chatType)
+        end
+    end)
+    if InputUtil.IsGamepadUIEnabled() then
+        editBox:SetStickyType(editBox:GetChatType())
+    end
+
+    hooksecurefunc(chatFrame, "SmartNavigationCloseHandler", function(self)
+        if self.editBox then
+            self.editBox:SetText("")
+        end
+    end)
+    hookedChatBackFrames[chatFrame] = true
+end
+
 -- Keep chat tabs clickable, revealing each only while hovered, over a clear background.
 local function UpdateChatTabVisibility()
     for _, name in ipairs(CHAT_FRAMES or {}) do
         HideChatBackground(name)
+        HookChatGamepadBack(_G[name])
         local tab = _G[name .. "Tab"]
         if tab then
             tab:SetAlpha(tab:IsMouseOver() and 1 or 0)

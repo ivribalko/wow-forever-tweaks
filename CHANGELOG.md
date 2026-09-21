@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Cleared unsent chat text when pressing gamepad Back while retaining the selected chat channel.
+
 - Raised the bottom-left chat window to leave space for the gamepad button-hint panel.
 
 - Corrected native watch insertion order so quest levels display ascending, with equal-level order preserved.
