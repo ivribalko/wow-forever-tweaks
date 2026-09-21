@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fixed the gamepad chat shortcut failing to open hidden input in classic chat style.
+
 - Set chat messages to begin fading after 15 seconds.
 
 - Cleared unsent chat text when pressing gamepad Back while retaining the selected chat channel.

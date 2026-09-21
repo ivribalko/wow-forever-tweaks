@@ -56,7 +56,7 @@ local function HideChatBackground(name)
     end
 end
 
--- Preserve the selected gamepad chat channel and clear drafts canceled with Back.
+-- Open classic chat input, preserve its channel, and clear drafts canceled with Back.
 local hookedChatBackFrames = setmetatable({}, { __mode = "k" })
 local function HookChatGamepadBack(chatFrame)
     if not chatFrame or hookedChatBackFrames[chatFrame]
@@ -78,6 +78,15 @@ local function HookChatGamepadBack(chatFrame)
     if InputUtil.IsGamepadUIEnabled() then
         editBox:SetStickyType(editBox:GetChatType())
     end
+
+    -- Native FocusGamepad only calls SetFocus; classic-style input starts hidden.
+    -- ActivateChat shows it and applies the normal input/header/focus setup.
+    hooksecurefunc(chatFrame, "FocusGamepad", function(self)
+        if InputUtil.IsGamepadUIEnabled() and GetCVar("chatStyle") == "classic"
+            and self:IsShown() and not self.editBox:IsShown() then
+            ChatFrameUtil.ActivateChat(self.editBox)
+        end
+    end)
 
     hooksecurefunc(chatFrame, "SmartNavigationCloseHandler", function(self)
         if self.editBox then

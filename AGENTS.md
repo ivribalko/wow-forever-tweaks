@@ -43,6 +43,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Native touchpad cursor control is disabled at login and UI reload through `GamePadTouchCursorEnable`. Touchpad click bindings remain configured separately. The setting persists if the addon is disabled; restore it with `/console GamePadTouchCursorEnable 1`.
 - Chat is anchored at the bottom-left after login or UI reload, with a 100-UI-unit bottom margin for the gamepad button-hint panel and space for its side buttons.
 - Pressing gamepad Back while editing chat clears the unsent text as native chat focus closes. The selected channel remains the sticky chat type while gamepad UI is enabled; native availability checks still apply.
+- The gamepad chat shortcut (R1 + L1 + Down) opens the input in classic chat style as well as IM style.
 - Chat messages begin their native fade after 15 seconds. Native gamepad chat focus keeps messages visible and resets their fade timers when focus closes.
 - Chat tabs are invisible until individually hovered, matching UITweaks, including newly opened tabs. They remain clickable.
 - The main chat window and its docked tabs are set to 360 UI units tall, three times the default, once after login or UI reload. Later native layout changes may override this height.
