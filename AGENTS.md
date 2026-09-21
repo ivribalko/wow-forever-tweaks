@@ -41,7 +41,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - The local controller mapping assigns DualSense Share/Create to `PADBACK` for native menu actions, including Search in professions. Native prompts may still show the left-touchpad symbol. Restart the client after restoring mappings.
 - Chat backgrounds and decorative borders, including side-button backgrounds, are hidden even on hover. Chat text and controls remain visible; saved background settings are not changed.
 - Native touchpad cursor control is disabled at login and UI reload through `GamePadTouchCursorEnable`. Touchpad click bindings remain configured separately. The setting persists if the addon is disabled; restore it with `/console GamePadTouchCursorEnable 1`.
-- Chat is anchored at the bottom-left after login or UI reload, with space for its side buttons and input box.
+- Chat is anchored at the bottom-left after login or UI reload, with a 100-UI-unit bottom margin for the gamepad button-hint panel and space for its side buttons.
 - Chat tabs are invisible until individually hovered, matching UITweaks, including newly opened tabs. They remain clickable.
 - The main chat window and its docked tabs are set to 360 UI units tall, three times the default, once after login or UI reload. Later native layout changes may override this height.
 - Automatic gamepad aura popups are disabled through `GamepadShowAutoAuraTooltip`, including Plainsrunning stack popups. Manual buff inspection remains available. This client setting persists if the addon is disabled; restore it with `/console GamepadShowAutoAuraTooltip 1`.

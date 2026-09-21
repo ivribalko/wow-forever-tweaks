@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Raised the bottom-left chat window to leave space for the gamepad button-hint panel.
+
 - Corrected native watch insertion order so quest levels display ascending, with equal-level order preserved.
 
 - Applied quest-level ordering to the complete native watch list so lower-level quests can appear ahead of quests previously hidden by tracker overflow. Native watch APIs replace tracker-method overrides; reordering waits until combat ends and preserves final watch membership and the super-tracked quest. In-game validation is pending.

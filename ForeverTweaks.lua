@@ -326,9 +326,9 @@ chatHeightEvents:SetScript("OnEvent", function(self)
     C_Timer.After(0, function()
         if ChatFrame1 then
             ChatFrame1:SetHeight(360)
-            -- Leave room for the left-side buttons and the 32-unit input box below.
+            -- Leave room for the left-side buttons and gamepad button hints below chat.
             ChatFrame1:ClearAllPoints()
-            ChatFrame1:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 32, 36)
+            ChatFrame1:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 32, 100)
         end
     end)
 end)
