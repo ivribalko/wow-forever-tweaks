@@ -56,7 +56,7 @@ local function HideChatBackground(name)
     end
 end
 
--- Open classic chat input, preserve its channel, and clear drafts canceled with Back.
+-- Clear canceled drafts only after native gamepad navigation releases chat focus.
 local hookedChatBackFrames = setmetatable({}, { __mode = "k" })
 local function HookChatGamepadBack(chatFrame)
     if not chatFrame or hookedChatBackFrames[chatFrame]
@@ -69,25 +69,8 @@ local function HookChatGamepadBack(chatFrame)
         return
     end
 
-    -- Native focus loss can restore the sticky type before the Back post-hook runs.
-    hooksecurefunc(editBox, "SetChatType", function(self, chatType)
-        if InputUtil.IsGamepadUIEnabled() then
-            self:SetStickyType(chatType)
-        end
-    end)
-    if InputUtil.IsGamepadUIEnabled() then
-        editBox:SetStickyType(editBox:GetChatType())
-    end
-
-    -- Native FocusGamepad only calls SetFocus; classic-style input starts hidden.
-    -- ActivateChat shows it and applies the normal input/header/focus setup.
-    hooksecurefunc(chatFrame, "FocusGamepad", function(self)
-        if InputUtil.IsGamepadUIEnabled() and GetCVar("chatStyle") == "classic"
-            and self:IsShown() and not self.editBox:IsShown() then
-            ChatFrameUtil.ActivateChat(self.editBox)
-        end
-    end)
-
+    -- Do not activate chat or write chat/sticky attributes from addon hooks.
+    -- Native close handlers read that state before updating protected interact targets.
     hooksecurefunc(chatFrame, "SmartNavigationCloseHandler", function(self)
         if self.editBox then
             self.editBox:SetText("")

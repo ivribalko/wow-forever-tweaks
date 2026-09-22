@@ -2,11 +2,11 @@
 
 ## Unreleased
 
-- Fixed the gamepad chat shortcut failing to open hidden input in classic chat style.
+- Removed addon-driven classic chat activation and sticky-channel writes to address protected gamepad interact-target errors after sending chat. Input activation and channel retention follow native behavior; in-game verification is pending.
 
 - Set chat messages to begin fading after 15 seconds.
 
-- Cleared unsent chat text when pressing gamepad Back while retaining the selected chat channel.
+- Cleared unsent chat text when pressing gamepad Back.
 
 - Raised the bottom-left chat window to leave space for the gamepad button-hint panel.
 
