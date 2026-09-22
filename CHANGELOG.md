@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added an attempt to remove the controller-to-mouse overlap delay for external touchpad mouse mappers. This currently does not work: the client retains `2000` despite successful writes.
+
 - Added automatic selected-recipe output tooltips with equipped-item comparisons in the profession window; in-game validation is pending.
 
 - Made chat input backgrounds and focus borders fully transparent, including IM-style input.

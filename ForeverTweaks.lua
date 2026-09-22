@@ -127,6 +127,8 @@ gamepadSettings:SetScript("OnEvent", function(self)
     C_CVar.SetCVar("GamepadShowAutoAuraTooltip", "0")
     -- Leave touchpad cursor movement to an external native-mouse mapper.
     C_CVar.SetCVar("GamePadTouchCursorEnable", "0")
+    -- Attempt to remove the overlap delay; the client currently retains 2000 ms.
+    C_CVar.SetCVar("GamePadOverlapMouseMs", "0")
     self:UnregisterEvent("PLAYER_LOGIN")
 end)
 
