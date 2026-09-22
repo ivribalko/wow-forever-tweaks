@@ -7,6 +7,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Sorts the full tracked-quest list by quest level, lowest first.
 
 - Automatically sells junk and repairs items at merchants.
+- Shows the selected profession recipe's output tooltip with equipped-item comparisons.
 - Automatically replaces harmful spell actions with spell-casting macros that start autoattack in combat.
 - Automatically upgrades action-bar spells and makes spell references in macros rankless to use the highest learned rank.
 - Adds a small circular-arrow button at the minimap’s top-right corner to reload the interface.
@@ -33,6 +34,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - `/ftattack restore` disables conversion for this character and restores unedited generated macros on scanned bars to spells at their highest learned rank, including other controller stance bars when activated. Generated macros remain in macro storage for reuse or manual deletion. `/ftattack on` enables conversion again. Disabling the addon alone leaves the macros on the bars. Ownership and the enabled setting persist in character SavedVariables.
 - Opening a merchant sells gray-quality items with vendor value and repairs all items using personal gold when the merchant offers repairs and the full cost is affordable. Sale proceeds can fund repairs during the same visit. Guild funds are not used; locked stacks are skipped by the classic bag-selling fallback.
 - Supports WoW Forever beta 1.60.1 (`16001`).
+- Selecting a crafting recipe displays its result beside the profession window, with native equipped-item comparisons where available and no modifier key required. Hover tooltips take priority; the preview returns when they close and hides with the crafting page. Recrafting and inspection forms are excluded. In-game validation is pending.
 - Place the `ForeverTweaks` folder in the client’s `Interface/AddOns` directory and enable Forever Tweaks in the AddOns menu.
 - The minimap reload button uses a native refresh symbol and the same circular rim as the day/night indicator. The AddOns list uses the bundled circular-arrow artwork.
 - Restart the game if the newly created addon is absent from the list.

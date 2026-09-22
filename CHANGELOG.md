@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added automatic selected-recipe output tooltips with equipped-item comparisons in the profession window; in-game validation is pending.
+
 - Made chat input backgrounds and focus borders fully transparent, including IM-style input.
 
 - Removed addon-driven classic chat activation and sticky-channel writes to address protected gamepad interact-target errors after sending chat. Input activation and channel retention follow native behavior; in-game verification is pending.
