@@ -47,11 +47,20 @@ touchpadBindings:SetScript("OnEvent", function(self)
 end)
 
 -- Hide decorative chat regions without writing settings or firing chat-config events.
+local chatInputTextureSuffixes = { "Left", "Mid", "Right", "FocusLeft", "FocusMid", "FocusRight" }
 local function HideChatBackground(name)
     for _, suffix in ipairs(CHAT_FRAME_TEXTURES or {}) do
         local texture = _G[name .. suffix]
         if texture and texture:IsShown() then
             texture:Hide()
+        end
+    end
+    -- IM input stays visible; clear its artwork while preserving text and native focus.
+    -- Texture alpha also survives Blizzard showing the colored focus border again.
+    for _, suffix in ipairs(chatInputTextureSuffixes) do
+        local texture = _G[name .. "EditBox" .. suffix]
+        if texture then
+            texture:SetAlpha(0)
         end
     end
 end
@@ -83,7 +92,7 @@ end
 local configuredChatFadeFrames = setmetatable({}, { __mode = "k" })
 local function ConfigureChatMessageFade(chatFrame)
     if chatFrame and not configuredChatFadeFrames[chatFrame] then
-        chatFrame:SetTimeVisible(15)
+        chatFrame:SetTimeVisible(30)
         configuredChatFadeFrames[chatFrame] = true
     end
 end
