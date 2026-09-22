@@ -44,6 +44,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Chat input backgrounds and borders are fully transparent, including the persistent IM-style input box and its focus border. Input text remains visible.
 - Native touchpad cursor control is disabled at login and UI reload through `GamePadTouchCursorEnable`. Touchpad click bindings remain configured separately. The setting persists if the addon is disabled; restore it with `/console GamePadTouchCursorEnable 1`.
 - Automatically sets `GamePadFactionColor` to `0` at login and UI reload.
+- Enables tooltips in controller menus by setting `GamepadDisableTooltips` to `0` at login and UI reload. This setting persists if the addon is disabled.
 - The addon attempts to set `GamePadOverlapMouseMs = 0` at login and UI reload for external mouse mappers. This currently does not work: the client reports `2000` even after a successful direct write. The cause is unconfirmed.
 - Chat is anchored at the bottom-left after login or UI reload, with a 100-UI-unit bottom margin for the gamepad button-hint panel and space for its side buttons.
 - Pressing gamepad Back while editing chat clears the unsent text as native chat focus closes. Channel retention follows native sticky-chat behavior.

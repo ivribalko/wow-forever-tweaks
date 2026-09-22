@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Enabled item tooltips in controller menus at login and UI reload.
+
 - Added automatic `GamePadFactionColor = 0` at login and UI reload.
 
 - Added an attempt to remove the controller-to-mouse overlap delay for external touchpad mouse mappers. This currently does not work: the client retains `2000` despite successful writes.

@@ -125,6 +125,8 @@ local gamepadSettings = CreateFrame("Frame")
 gamepadSettings:RegisterEvent("PLAYER_LOGIN")
 gamepadSettings:SetScript("OnEvent", function(self)
     C_CVar.SetCVar("GamepadShowAutoAuraTooltip", "0")
+    -- GameTooltip_OnShow hides item tooltips in focused menus when this is enabled.
+    C_CVar.SetCVar("GamepadDisableTooltips", "0")
     -- Leave touchpad cursor movement to an external native-mouse mapper.
     C_CVar.SetCVar("GamePadTouchCursorEnable", "0")
     C_CVar.SetCVar("GamePadFactionColor", "0")
