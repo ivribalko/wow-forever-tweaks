@@ -48,7 +48,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Enables tooltips in controller menus by setting `GamepadDisableTooltips` to `0` at login and UI reload. This setting persists if the addon is disabled.
 - The addon attempts to set `GamePadOverlapMouseMs = 0` at login and UI reload for external mouse mappers. This currently does not work: the client reports `2000` even after a successful direct write. The cause is unconfirmed.
 - Chat is anchored at the bottom-left after login or UI reload, with a 100-UI-unit bottom margin for the gamepad button-hint panel and space for its side buttons.
-- Pressing gamepad Back while editing chat clears the unsent text as native chat focus closes. Channel retention follows native sticky-chat behavior.
+- Pressing gamepad Back while editing chat clears the unsent text as native chat focus closes. The channel label and its suffixes hide when input loses focus and return when focused. Channel retention follows native sticky-chat behavior.
 - Gamepad chat input activation follows native behavior. The addon does not force hidden classic-style input open; use native IM chat style for gamepad input.
 - Chat messages begin their native fade after 30 seconds. Native gamepad chat focus keeps messages visible and resets their fade timers when focus closes.
 - Chat tabs are invisible until individually hovered, matching UITweaks, including newly opened tabs. They remain clickable.

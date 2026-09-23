@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Hid the chat input channel label and its suffixes when focus closes, including after canceling a draft with gamepad Circle/Back.
+
 - Made chat input expand to the right as drafts grow, shrinking when text is removed and stopping near the screen edge.
 - Enabled item tooltips in controller menus at login and UI reload.
 - Added automatic `GamePadFactionColor = 0` at login and UI reload.

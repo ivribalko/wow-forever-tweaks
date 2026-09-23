@@ -48,8 +48,17 @@ end)
 
 -- Hide decorative chat regions without writing settings or firing chat-config events.
 local chatInputTextureSuffixes = { "Left", "Mid", "Right", "FocusLeft", "FocusMid", "FocusRight" }
+local chatInputHeaderKeys = { "header", "headerSuffix", "languageHeader" }
 local function RefreshChatInputBackground(editBox)
     local active = editBox:IsShown() and editBox:HasFocus()
+    -- Native gamepad close can leave headers shown after releasing a nonempty draft.
+    -- Alpha preserves native visibility decisions and header measurements.
+    for _, key in ipairs(chatInputHeaderKeys) do
+        local header = editBox[key]
+        if header then
+            header:SetAlpha(active and 1 or 0)
+        end
+    end
     for _, suffix in ipairs(chatInputTextureSuffixes) do
         local texture = _G[editBox:GetName() .. suffix]
         if texture then
@@ -104,6 +113,7 @@ local function HookChatGamepadBack(chatFrame)
     hooksecurefunc(chatFrame, "SmartNavigationCloseHandler", function(self)
         if self.editBox then
             self.editBox:SetText("")
+            RefreshChatInputBackground(self.editBox)
         end
     end)
     hookedChatBackFrames[chatFrame] = true
