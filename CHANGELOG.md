@@ -2,11 +2,12 @@
 
 ## Unreleased
 
+- Made chat input expand to the right as drafts grow, shrinking when text is removed and stopping near the screen edge.
 - Enabled item tooltips in controller menus at login and UI reload.
 - Added automatic `GamePadFactionColor = 0` at login and UI reload.
 - Added an attempt to remove the controller-to-mouse overlap delay for external touchpad mouse mappers. This currently does not work: the client retains `2000` despite successful writes.
 - Added automatic selected-recipe output tooltips with equipped-item comparisons in the profession window; in-game validation is pending.
-- Made chat input backgrounds and focus borders fully transparent, including IM-style input.
+- Made chat input backgrounds show immediately on focus and hide on close, including IM-style input, while keeping colored focus borders hidden.
 - Removed addon-driven classic chat activation and sticky-channel writes to address protected gamepad interact-target errors after sending chat. Input activation and channel retention follow native behavior; in-game verification is pending.
 - Set chat messages to begin fading after 30 seconds.
 - Cleared unsent chat text when pressing gamepad Back.

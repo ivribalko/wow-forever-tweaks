@@ -48,6 +48,17 @@ end)
 
 -- Hide decorative chat regions without writing settings or firing chat-config events.
 local chatInputTextureSuffixes = { "Left", "Mid", "Right", "FocusLeft", "FocusMid", "FocusRight" }
+local function RefreshChatInputBackground(editBox)
+    local active = editBox:IsShown() and editBox:HasFocus()
+    for _, suffix in ipairs(chatInputTextureSuffixes) do
+        local texture = _G[editBox:GetName() .. suffix]
+        if texture then
+            local isFocusBorder = suffix:sub(1, 5) == "Focus"
+            texture:SetAlpha(active and not isFocusBorder and 1 or 0)
+        end
+    end
+end
+
 local function HideChatBackground(name)
     for _, suffix in ipairs(CHAT_FRAME_TEXTURES or {}) do
         local texture = _G[name .. suffix]
@@ -55,14 +66,24 @@ local function HideChatBackground(name)
             texture:Hide()
         end
     end
-    -- IM input stays visible; clear its artwork while preserving text and native focus.
-    -- Texture alpha also survives Blizzard showing the colored focus border again.
-    for _, suffix in ipairs(chatInputTextureSuffixes) do
-        local texture = _G[name .. "EditBox" .. suffix]
-        if texture then
-            texture:SetAlpha(0)
-        end
+    local editBox = _G[name .. "EditBox"]
+    if editBox then
+        RefreshChatInputBackground(editBox)
     end
+end
+
+-- Show native input artwork only while focused, keeping colored borders hidden.
+local configuredChatInputs = setmetatable({}, { __mode = "k" })
+local function ConfigureChatInputBackground(chatFrame)
+    local editBox = chatFrame and chatFrame.editBox
+    if not editBox or configuredChatInputs[editBox] then
+        return
+    end
+    configuredChatInputs[editBox] = true
+    for _, script in ipairs({ "OnEditFocusGained", "OnEditFocusLost", "OnShow", "OnHide" }) do
+        editBox:HookScript(script, RefreshChatInputBackground)
+    end
+    RefreshChatInputBackground(editBox)
 end
 
 -- Clear canceled drafts only after native gamepad navigation releases chat focus.
@@ -97,12 +118,69 @@ local function ConfigureChatMessageFade(chatFrame)
     end
 end
 
+-- Extend the native right anchor without moving the input's left edge or chat window.
+local growingChatInputs = setmetatable({}, { __mode = "k" })
+local function UpdateChatInputWidth(editBox)
+    local state = growingChatInputs[editBox]
+    if not state or not editBox:IsShown() then
+        return
+    end
+
+    local scale = editBox:GetEffectiveScale()
+    local left = editBox:GetLeft()
+    local nativeRight = state.scrollBar:GetRight()
+    local screenRight = UIParent:GetRight()
+    if not left or not nativeRight or not screenRight then
+        return
+    end
+    nativeRight = nativeRight * state.scrollBar:GetEffectiveScale() / scale + 8
+    screenRight = (screenRight - 16) * UIParent:GetEffectiveScale() / scale
+
+    local font, size, flags = editBox:GetFont()
+    if not font then
+        return
+    end
+    state.measure:SetFont(font, size, flags)
+    state.measure:SetText(editBox:GetText())
+    local insetLeft, insetRight = editBox:GetTextInsets()
+    local desiredRight = left + insetLeft + state.measure:GetUnboundedStringWidth() + insetRight + 8
+    local right = math.min(math.max(nativeRight, desiredRight), screenRight)
+    local offset = 8 + right - nativeRight
+    for index = 1, editBox:GetNumPoints() do
+        local point, relativeTo, relativePoint, currentOffset = editBox:GetPoint(index)
+        if point == "RIGHT" and relativeTo == state.scrollBar
+            and relativePoint == "RIGHT" and currentOffset == offset then
+            return
+        end
+    end
+    -- Forever anchors RIGHT to the scrollbar and TOPLEFT to the chat frame.
+    editBox:SetPoint("RIGHT", state.scrollBar, "RIGHT", offset, 0)
+end
+
+local function ConfigureGrowingChatInput(chatFrame)
+    local editBox = chatFrame and chatFrame.editBox
+    if not editBox or not chatFrame.ScrollBar then
+        return
+    end
+    if not growingChatInputs[editBox] then
+        local measure = editBox:CreateFontString(nil, "ARTWORK")
+        measure:Hide()
+        growingChatInputs[editBox] = { measure = measure, scrollBar = chatFrame.ScrollBar }
+        editBox:HookScript("OnTextChanged", UpdateChatInputWidth)
+        editBox:HookScript("OnShow", UpdateChatInputWidth)
+    end
+    -- Also follows font, header, scale, and chat-window layout changes.
+    UpdateChatInputWidth(editBox)
+end
+
 -- Keep chat tabs clickable, revealing each only while hovered, over a clear background.
 local function UpdateChatTabVisibility()
     for _, name in ipairs(CHAT_FRAMES or {}) do
         HideChatBackground(name)
+        ConfigureChatInputBackground(_G[name])
         HookChatGamepadBack(_G[name])
         ConfigureChatMessageFade(_G[name])
+        ConfigureGrowingChatInput(_G[name])
         local tab = _G[name .. "Tab"]
         if tab then
             tab:SetAlpha(tab:IsMouseOver() and 1 or 0)
