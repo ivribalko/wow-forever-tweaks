@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Doubled chat height upward from its existing bottom edge and instantly showed/hid the original background and frame on native gamepad chat focus changes without easing, restoring the previous size and anchors on exit.
+- Removed the forced chat window height and position.
 - Hid the chat input channel label and its suffixes when focus closes, including after canceling a draft with gamepad Circle/Back.
 
 - Made chat input expand to the right as drafts grow, shrinking when text is removed and stopping near the screen edge.
@@ -13,7 +15,6 @@
 - Removed addon-driven classic chat activation and sticky-channel writes to address protected gamepad interact-target errors after sending chat. Input activation and channel retention follow native behavior; in-game verification is pending.
 - Set chat messages to begin fading after 30 seconds.
 - Cleared unsent chat text when pressing gamepad Back.
-- Raised the bottom-left chat window to leave space for the gamepad button-hint panel.
 - Corrected native watch insertion order so quest levels display ascending, with equal-level order preserved.
 - Applied quest-level ordering to the complete native watch list so lower-level quests can appear ahead of quests previously hidden by tracker overflow. Native watch APIs replace tracker-method overrides; reordering waits until combat ends and preserves final watch membership and the super-tracked quest. In-game validation is pending.
 - Added automatic highest-learned-rank upgrades for action-bar spells, including heals and buffs. Generated macros use rankless spell names; recognized spell references in custom character and account macros also have explicit ranks removed.
@@ -26,7 +27,7 @@
 - Added automatic junk selling and repairs using personal gold at merchants.
 - Matched the reload button to the minimap day/night indicator with a native circular rim and refresh symbol.
 - Added a minimap reload button.
-- Simplified chat backgrounds and tabs, with a taller bottom-left chat layout.
+- Simplified chat backgrounds and tabs.
 - Added combat fades for player, target, casting, and action bars.
 - Displayed XP percentage beside the player name.
 - Added controller shortcuts for the map and inventory.

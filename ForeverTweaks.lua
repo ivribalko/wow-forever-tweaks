@@ -68,10 +68,15 @@ local function RefreshChatInputBackground(editBox)
     end
 end
 
+local focusedChatFrames = setmetatable({}, { __mode = "k" })
 local function HideChatBackground(name)
+    local state = focusedChatFrames[_G[name]]
+    if state then
+        state.refreshArtwork()
+    end
     for _, suffix in ipairs(CHAT_FRAME_TEXTURES or {}) do
         local texture = _G[name .. suffix]
-        if texture and texture:IsShown() then
+        if not state and texture and texture:IsShown() then
             texture:Hide()
         end
     end
@@ -117,6 +122,87 @@ local function HookChatGamepadBack(chatFrame)
         end
     end)
     hookedChatBackFrames[chatFrame] = true
+end
+
+-- Temporarily enlarge the native dock owner and show its original artwork on gamepad focus.
+local function ConfigureGamepadChatFocus(chatFrame)
+    if not chatFrame or focusedChatFrames[chatFrame]
+        or type(chatFrame.FocusGamepad) ~= "function"
+        or type(chatFrame.UnfocusGamepad) ~= "function" then
+        return
+    end
+
+    local driver = CreateFrame("Frame")
+    local state = { driver = driver, alpha = 0 }
+    focusedChatFrames[chatFrame] = state
+
+    function state.refreshArtwork()
+        local opacity = math.max(chatFrame.oldAlpha or DEFAULT_CHATFRAME_ALPHA, DEFAULT_CHATFRAME_ALPHA)
+        for _, suffix in ipairs(CHAT_FRAME_TEXTURES or {}) do
+            local texture = _G[chatFrame:GetName() .. suffix]
+            if texture then
+                -- Cancel native hover fades so they cannot delay or override focus visibility.
+                UIFrameFadeRemoveFrame(texture)
+                texture:SetAlpha(opacity * state.alpha)
+                texture:SetShown(state.alpha > 0)
+            end
+        end
+    end
+
+    local function SetChatArtworkVisible(visible)
+        state.alpha = visible and 1 or 0
+        state.refreshArtwork()
+    end
+
+    local function RestoreChat()
+        if state.owner then
+            local owner, height, width, points = state.owner, state.height, state.width, state.points
+            state.owner, state.height, state.width, state.points = nil, nil, nil, nil
+            owner:ClearAllPoints()
+            owner:SetSize(width, height)
+            for _, point in ipairs(points) do
+                owner:SetPoint(unpack(point, 1, 5))
+            end
+        end
+        SetChatArtworkVisible(false)
+    end
+
+    hooksecurefunc(chatFrame, "FocusGamepad", function(self)
+        if not state.owner then
+            -- Docked tabs inherit the primary frame's geometry through native anchors.
+            local owner = self.isDocked and self.dock and self.dock.primary or self
+            local left, bottom = owner:GetLeft(), owner:GetBottom()
+            if not left or not bottom then
+                return
+            end
+            state.owner, state.height, state.width = owner, owner:GetHeight(), owner:GetWidth()
+            state.points = {}
+            for index = 1, owner:GetNumPoints() do
+                state.points[index] = { owner:GetPoint(index) }
+            end
+            -- Pin the existing bottom-left corner so all extra height extends upward.
+            local scale = UIParent:GetEffectiveScale() / owner:GetEffectiveScale()
+            owner:ClearAllPoints()
+            owner:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT",
+                left - UIParent:GetLeft() * scale, bottom - UIParent:GetBottom() * scale)
+            owner:SetSize(state.width, state.height * 2)
+        end
+        SetChatArtworkVisible(true)
+    end)
+    hooksecurefunc(chatFrame, "UnfocusGamepad", RestoreChat)
+    chatFrame:HookScript("OnHide", RestoreChat)
+    driver:RegisterEvent("PLAYER_LOGOUT")
+    driver:SetScript("OnEvent", RestoreChat)
+end
+
+-- Native hover transitions must not restart artwork fades after a focus transition.
+for _, functionName in ipairs({ "FCF_FadeInChatFrame", "FCF_FadeOutChatFrame" }) do
+    hooksecurefunc(functionName, function(chatFrame)
+        local state = focusedChatFrames[chatFrame]
+        if state then
+            state.refreshArtwork()
+        end
+    end)
 end
 
 -- Set message lifetime once per window, preserving native focus and scroll behavior.
@@ -189,6 +275,7 @@ local function UpdateChatTabVisibility()
         HideChatBackground(name)
         ConfigureChatInputBackground(_G[name])
         HookChatGamepadBack(_G[name])
+        ConfigureGamepadChatFocus(_G[name])
         ConfigureChatMessageFade(_G[name])
         ConfigureGrowingChatInput(_G[name])
         local tab = _G[name .. "Tab"]
@@ -453,18 +540,3 @@ opacityEvents:RegisterEvent("ADDON_LOADED")
 opacityEvents:RegisterEvent("PLAYER_REGEN_DISABLED")
 opacityEvents:RegisterEvent("PLAYER_REGEN_ENABLED")
 opacityEvents:SetScript("OnEvent", UpdateCombatOpacity)
-
--- Position and size chat once the initial layout has loaded.
-local chatHeightEvents = CreateFrame("Frame")
-chatHeightEvents:RegisterEvent("PLAYER_ENTERING_WORLD")
-chatHeightEvents:SetScript("OnEvent", function(self)
-    self:UnregisterEvent("PLAYER_ENTERING_WORLD")
-    C_Timer.After(0, function()
-        if ChatFrame1 then
-            ChatFrame1:SetHeight(360)
-            -- Leave room for the left-side buttons and gamepad button hints below chat.
-            ChatFrame1:ClearAllPoints()
-            ChatFrame1:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 32, 100)
-        end
-    end)
-end)

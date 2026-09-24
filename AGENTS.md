@@ -10,7 +10,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Automatically replaces harmful spell actions with spell-casting macros that start autoattack in combat.
 - Automatically upgrades action-bar spells and makes spell references in macros rankless to use the highest learned rank.
 - Adds a small circular-arrow button at the minimap’s top-right corner to reload the interface.
-- Removes chat backgrounds and borders, shows chat tabs only on hover, and places a taller chat window at the bottom-left.
+- Removes chat backgrounds and borders and shows chat tabs only on hover.
 - Smoothly fades player and target frames, cast bars, and gamepad action bars between 40% opacity outside combat and 70% in combat.
 - Shows XP progress as a gold percentage beside the player name and hides the original XP artwork.
 - Shows maximum HP beside the level in friendly and hostile unit tooltips.
@@ -40,19 +40,17 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - The button has no text, configuration, or external dependencies.
 - The PlayStation controller's left touchpad click toggles the world map through `PADPADDLE1`; its right touchpad click toggles inventory through `PAD6`. A local `WTF/GamePadConfig_*.json` mapping assigns the left-side input to `PADPADDLE1` and the right-side input to `PAD6`; restart the game after changing that mapping. The addon bindings last only while enabled. Restore mappings for DualSense and DualSense Edge with the [controller restore tool](tools/CONTROLLERS.md).
 - The local controller mapping assigns DualSense Share/Create to `PADBACK` for native menu actions, including Search in professions. Native prompts may still show the left-touchpad symbol. Restart the client after restoring mappings.
-- Chat backgrounds and decorative borders, including side-button backgrounds, are hidden even on hover. Chat text and controls remain visible; saved background settings are not changed.
+- Chat backgrounds and decorative borders, including side-button backgrounds, are hidden even on hover. Gamepad chat focus (L1+R1+Down) temporarily doubles the chat window height upward from its existing bottom edge and instantly shows the original chat background and decorative frame at native opacity. Leaving focus restores the previous height and instantly hides the artwork, without animation or easing. Original size and anchors return when focus closes; saved background settings are not changed. In-game validation is pending.
 - Chat input background shows immediately while the input has focus and hides immediately when focus closes, including IM-style input. It follows the expanding input width. The colored focus border stays hidden; input text remains under native control. In-game validation is pending.
 - Chat input expands to the right for long drafts, keeping its left edge fixed and the normal chat width as its minimum. It shrinks as text is removed and stops near the screen edge, where native scrolling continues. In-game validation is pending.
 - Native touchpad cursor control is disabled at login and UI reload through `GamePadTouchCursorEnable`. Touchpad click bindings remain configured separately. The setting persists if the addon is disabled; restore it with `/console GamePadTouchCursorEnable 1`.
 - Automatically sets `GamePadFactionColor` to `0` at login and UI reload.
 - Enables tooltips in controller menus by setting `GamepadDisableTooltips` to `0` at login and UI reload. This setting persists if the addon is disabled.
 - The addon attempts to set `GamePadOverlapMouseMs = 0` at login and UI reload for external mouse mappers. This currently does not work: the client reports `2000` even after a successful direct write. The cause is unconfirmed.
-- Chat is anchored at the bottom-left after login or UI reload, with a 100-UI-unit bottom margin for the gamepad button-hint panel and space for its side buttons.
 - Pressing gamepad Back while editing chat clears the unsent text as native chat focus closes. The channel label and its suffixes hide when input loses focus and return when focused. Channel retention follows native sticky-chat behavior.
 - Gamepad chat input activation follows native behavior. The addon does not force hidden classic-style input open; use native IM chat style for gamepad input.
 - Chat messages begin their native fade after 30 seconds. Native gamepad chat focus keeps messages visible and resets their fade timers when focus closes.
 - Chat tabs are invisible until individually hovered, matching UITweaks, including newly opened tabs. They remain clickable.
-- The main chat window and its docked tabs are set to 360 UI units tall, three times the default, once after login or UI reload. Later native layout changes may override this height.
 - Automatic gamepad aura popups are disabled through `GamepadShowAutoAuraTooltip`, including Plainsrunning stack popups. Manual buff inspection remains available. This client setting persists if the addon is disabled; restore it with `/console GamepadShowAutoAuraTooltip 1`.
 - Gamepad camera turning follows movement, including autorun, both in and out of combat. The addon manages `GamePadTurnWithCamera`: `2` (Always) while moving and `0` (While moving) when stopped, restored to `0` at logout or reload. The native dropdown reflects the temporary value; other dropdown choices are overridden while the addon is enabled. In-game autorun validation is pending.
 - Player and target frames, the player cast bar, and the gamepad action bars are 40% visible outside combat and 70% visible in combat.
