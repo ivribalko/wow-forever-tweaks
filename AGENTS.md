@@ -23,7 +23,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Usage
 
-- The full native watch list is reordered by ascending quest level before tracker layout chooses which quests fit. Equal levels keep their existing relative order; unavailable levels sort last. Reordering removes and immediately re-adds each watched quest through native APIs, preserving final membership and the super-tracked quest. It waits until combat ends. Native quest filters and special quest priorities still apply. The addon reports if the client rejects the requested order; in-game validation is pending.
+- The full native watch list is reordered by ascending quest level before tracker layout chooses which quests fit. Equal levels keep their existing relative order; unavailable levels sort last. Reordering removes and immediately re-adds each watched quest through native APIs, preserving final membership and the super-tracked quest. It waits until combat ends. Native quest filters and special quest priorities still apply. Source and alpha packages report if the client rejects the requested order; in-game validation is pending.
 
 - Attack macros are created at login and when action bars or spells change, outside combat with an empty cursor. They cover the ten persistent keyboard pages, standard controller pages, and the active controller stance bar. Other controller stance bars are processed when activated. Temporary vehicle, possession, and override states defer conversion.
 - Spells on scanned keyboard and controller bars upgrade to their highest learned rank, including heals and buffs. Unedited generated attack macros upgrade in place without requiring a free macro slot. Updates run outside combat with an empty cursor after login, spell learning, and bar changes; inactive controller stance bars update when activated. Pet bars and flyouts are left alone. Ambiguous same-name abilities are skipped. Rank upgrades remain enabled when attack macro conversion is disabled.
@@ -80,7 +80,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Complete in-game acceptance checks before a Release tag, including reload, chat, combat fades, XP display, and controller shortcuts. Verify the published file’s game-version labels match Forever.
 - Commit and push the intended revision and tag only after manual confirmation. CurseForge packages that revision and substitutes the version.
 
-Source and alpha packages retain protected-action diagnostics. Beta and release packages disable the diagnostic handler through `--@alpha@` markers. Zipping raw source retains diagnostics and does not substitute the version token. The aura-tooltip client setting persists after disabling the addon; restore it with `/console GamepadShowAutoAuraTooltip 1`.
+Source and alpha packages retain protected-action diagnostics and the quest-order rejection log. Beta and release packages comment out diagnostic code through `--@alpha@` / `--@end-alpha@` markers and the diagnostic SavedVariables declaration through `#@alpha@` / `#@end-alpha@` markers, following [CurseForge's alpha replacements](https://support.curseforge.com/support/solutions/articles/9000197281). Zipping raw source retains diagnostics and does not substitute the version token. The aura-tooltip client setting persists after disabling the addon; restore it with `/console GamepadShowAutoAuraTooltip 1`.
 
 ## Maintenance and license
 
@@ -90,6 +90,7 @@ The project is licensed under the [MIT License](LICENSE). World of Warcraft and 
 
 ## Repository Rules
 
+- Keep all debug logs and diagnostic-only code, event registrations, and SavedVariables declarations inside CurseForge alpha markers (`--@alpha@` / `--@end-alpha@` in Lua, `#@alpha@` / `#@end-alpha@` in TOC). Useful diagnostics may remain after troubleshooting; verify they are inactive in beta and release packages. Ordinary command responses and actionable user notices are not debug logs.
 - Treat “my other addon” as a reference to [UITweaks](https://github.com/ivribalko/UITweaks).
 - Require explicit manual confirmation before creating or amending commits and before pushing.
 - Start commit messages with a lowercase past-tense verb.

@@ -38,6 +38,6 @@
 - Combat, login, world-entry, and addon-load events apply 0.4 or 0.7 alpha to `PlayerFrame`, `TargetFrame`, `GamepadMainActionBarFrame`, `PlayerCastingBarFrame`, and `GamepadPlayerCastingBarFrame`. Show hooks reapply the current alpha when these frames reopen; the gamepad parent covers its main and override bars. Guarded cast-bar `SetAlpha` post-hooks scale native opacity writes without compounding them. Native hold/fade animation endpoints use the same combat opacity because animation alpha bypasses `SetAlpha`.
 - `AGENTS.md` contains project usage and repository rules; `README.md` is a relative symbolic link to it.
 
-The button follows the minimap's position, scale, and visibility. Protected-action events retain bounded diagnostics in client-managed SavedVariables for investigating blocked quest and menu actions.
+The button follows the minimap's position, scale, and visibility. Protected-action events retain bounded diagnostics in client-managed SavedVariables for investigating blocked quest and menu actions. CurseForge alpha markers gate the entire diagnostic handler, its TOC SavedVariables declaration, and the quest-order rejection log; beta and release packages leave these inactive.
 
 The controller restore tool also maps raw Share/Create input 4 to `PADBACK` on both DualSense models, supplying native menu actions after the touchpad inputs are reassigned. This stays in device configuration rather than overriding individual menu bindings.

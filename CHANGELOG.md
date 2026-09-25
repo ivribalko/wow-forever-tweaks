@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Restricted the quest-order diagnostic and diagnostic SavedVariables declaration to source and alpha packages.
 - Doubled chat height upward from its existing bottom edge and instantly showed/hid the original background and frame on native gamepad chat focus changes without easing, restoring the previous size and anchors on exit.
 - Removed the forced chat window height and position.
 - Hid the chat input channel label and its suffixes when focus closes, including after canceling a draft with gamepad Circle/Back.
