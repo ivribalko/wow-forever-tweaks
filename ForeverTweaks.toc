@@ -6,9 +6,10 @@
 #@alpha@
 ## SavedVariables: ForeverTweaksDiagnostics
 #@end-alpha@
-## SavedVariablesPerCharacter: ForeverTweaksAttackMacros
+## SavedVariablesPerCharacter: ForeverTweaksAttackMacros, ForeverTweaksChatHistory
 
 ForeverTweaks.lua
+ChatHistory.lua
 GamepadCamera.lua
 QuestTracker.lua
 PlayerFrameXP.lua

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added chat message restoration after UI reload, retaining up to 120 messages per permanent tab.
+
 - Show all addon-hidden native chat artwork during gamepad expansion, including every tab in the expanded dock and input focus borders.
 
 - Restricted the quest-order diagnostic and diagnostic SavedVariables declaration to source and alpha packages.

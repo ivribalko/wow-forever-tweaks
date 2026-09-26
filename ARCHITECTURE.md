@@ -1,5 +1,7 @@
 # Architecture
 
+- `ChatHistory.lua` snapshots up to 120 non-secret text/color entries per permanent chat frame at logout into character SavedVariables. The first world-entry event restores them only for UI reloads, matching frame and tab names and using native `BackFillMessage` in reverse order within available buffer capacity. It excludes the combat log and temporary tabs, discards session-specific message metadata, and consumes the saved snapshot once.
+
 - `QuestTracker.lua` reads and stably sorts the full native watch list in a private table, then reorders watches through native remove/add APIs outside combat. Watches are inserted in reverse sorted order because the native API prepends them. Each removed watch is immediately restored, and the super-tracked quest is restored after the batch. Events debounce the work; a secure post-hook on native watch sorting reapplies level order after zone sorting. Verification suppresses repeat attempts for a rejected order. Native tracker methods, quest block data, and click handlers are untouched; native layout handles overflow and special quest priorities.
 
 - `tools/restore-touchpad-config.py` restores left/right touchpad mappings for DualSense and DualSense Edge in the selected client WTF directory, backing up existing configuration and preserving unrelated mappings. `tools/CONTROLLERS.md` documents usage; the tools are excluded from addon packages.
