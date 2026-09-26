@@ -4,6 +4,54 @@ local latch, page
 local refreshPending = true
 local names = { "topBar", "leftBar", "rightBar", "bottomBar", "stanceBar" }
 
+-- Native left-square/right-circle geometry from Forever ActionBarStyles.lua.
+-- Only frame geometry is applied; native button methods remain untouched.
+local layouts = {
+    collapsed = { width = 208, height = 68, square = 32, circle = 30,
+        x = { -92, -58, -24, -58, 25, 55, 85, 55 },
+        y = { 0, 17, 0, -17, 0, 18, 0, -18 } },
+    expanded = { width = 266, height = 86, square = 40, circle = 38,
+        x = { -119, -75, -31, -75, 32, 70, 108, 70 },
+        y = { 0, 23, 0, -23, 0, 23, 0, -23 } },
+}
+
+local APPEARANCE = [[
+    if not self:GetAttribute("enabled") then return end
+    local selected = self:GetAttribute("selected")
+    for i = 1, 5 do
+        local bar = self:GetFrameRef("bar-" .. i)
+        local active = i == selected
+        local layout = active and self:GetAttribute("scaling") and "expanded" or "collapsed"
+        bar:SetWidth(self:GetAttribute(layout .. "-width"))
+        bar:SetHeight(self:GetAttribute(layout .. "-height"))
+        bar:SetFrameLevel(active and 5 or 4)
+        for slot = 1, 8 do
+            local button = self:GetFrameRef("button-" .. i .. "-" .. slot)
+            local size = self:GetAttribute(layout .. (slot <= 4 and "-square" or "-circle"))
+            button:SetWidth(size)
+            button:SetHeight(size)
+            button:ClearAllPoints()
+            button:SetPoint("CENTER", self:GetFrameRef("anchor-" .. i), "CENTER",
+                self:GetAttribute(layout .. "-x-" .. slot), self:GetAttribute(layout .. "-y-" .. slot))
+        end
+    end
+    self:CallMethod("RefreshFocusTextures")
+]]
+
+-- Texture-only presentation must not invoke native ShowHighlight or styling
+-- methods: those replace functions subsequently used by protected spell clicks.
+local updatingFocusTextures = false
+local function RefreshFocusTextures(self)
+    if updatingFocusTextures or not self:GetAttribute("enabled") then return end
+    updatingFocusTextures = true
+    local selected = self:GetAttribute("selected")
+    local highlight = GetCVarBool("GamepadShowActionBarHighlight")
+    for i, name in ipairs(names) do
+        page.actionBars[name].BackgroundFocus:SetShown(i == selected and highlight)
+    end
+    updatingFocusTextures = false
+end
+
 local REFRESH = [[
     if self:GetAttribute("refreshing") then return end
     self:SetAttribute("refreshing", true)
@@ -39,6 +87,7 @@ local REFRESH = [[
             end
         end
     end
+    self:RunAttribute("appearance")
     self:SetAttribute("refreshing", nil)
 ]]
 
@@ -131,6 +180,17 @@ local function Install()
     if not page or not page.actionBars.stanceBar then return end
     latch = CreateFrame("Button", "ForeverTweaksCombatPanels", UIParent,
         "SecureHandlerClickTemplate,SecureHandlerStateTemplate")
+    latch.RefreshFocusTextures = RefreshFocusTextures
+    latch:SetAttribute("appearance", APPEARANCE)
+    for layout, values in pairs(layouts) do
+        for _, key in ipairs({ "width", "height", "square", "circle" }) do
+            latch:SetAttribute(layout .. "-" .. key, values[key])
+        end
+        for slot = 1, 8 do
+            latch:SetAttribute(layout .. "-x-" .. slot, values.x[slot])
+            latch:SetAttribute(layout .. "-y-" .. slot, values.y[slot])
+        end
+    end
     latch:RegisterForClicks("AnyDown", "AnyUp")
     latch:EnableMouse(false)
     latch:SetAttribute("keys", 0)
@@ -151,6 +211,10 @@ local function Install()
         -- wrappers cannot obtain an explicitly protected handle for the bar.
         -- This child has its own protection and follows parent visibility.
         local visibilityDriver = CreateFrame("Frame", nil, bar, "SecureHandlerBaseTemplate")
+        -- Restricted SetPoint requires an explicitly protected relative frame,
+        -- even outside combat. Keep this anchor centered on the native bar.
+        visibilityDriver:SetPoint("CENTER", bar, "CENTER")
+        latch:SetFrameRef("anchor-" .. i, visibilityDriver)
         for _, script in ipairs({ "OnShow", "OnHide" }) do
             SecureHandlerWrapScript(visibilityDriver, script, latch,
                 [[ control:RunAttribute("refresh") ]])
@@ -187,6 +251,9 @@ local function Install()
     end)
     C_Timer.NewTicker(0.05, function() CapturePanelTransition("sample") end)
     --@end-alpha@
+    hooksecurefunc(page, "SetActiveActionBar", function()
+        RefreshFocusTextures(latch)
+    end)
     -- Queue a refresh after native slot updates and override activation finish.
     hooksecurefunc(page.actionBars.stanceBar, "UpdateStanceBarState", function()
         refreshPending = true
@@ -228,6 +295,13 @@ local function Update()
     local stance = page.actionBars.stanceBar
     local setting = stance:GetOverrideCVarValue()
     local compact = not not page:ShouldUseCompactLayout()
+    local scaling = GetCVarBool("GamepadShowActionBarScaling")
+    local highlight = GetCVarBool("GamepadShowActionBarHighlight")
+    if scaling ~= latch:GetAttribute("scaling") or highlight ~= latch:GetAttribute("highlight") then
+        latch:SetAttribute("scaling", scaling)
+        latch:SetAttribute("highlight", highlight)
+        refreshPending = true
+    end
     if dirty or enabled ~= latch:GetAttribute("enabled")
         or setting ~= latch:GetAttribute("setting") or compact ~= latch:GetAttribute("compact") then
         latch:SetAttribute("enabled", false)

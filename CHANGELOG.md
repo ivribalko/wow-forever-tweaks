@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Fixed restricted button anchoring by using explicitly protected child anchors instead of native bar handles.
+
+- Added native-size active-panel scaling and background highlighting through secure geometry updates and texture-only changes, preserving native spell-button methods.
+
 - Moved combat visibility handling to explicitly protected child frames so native bar refreshes retain the selected panel.
 - Added bounded source/alpha controller-panel diagnostics for native refreshes, secure trigger state, and visibility before/after corrections.
 - Reapplied compact-panel visibility after native refreshes in combat without changing spell-button functions or styles.
