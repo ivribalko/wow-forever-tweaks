@@ -4,6 +4,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
+- Creates an Instance chat tab if missing and enables party, raid, and instance messages there, including leaders and raid warnings.
 - Sorts the full tracked-quest list by quest level, lowest first.
 - Automatically sells junk and repairs items at merchants.
 - Shows the selected profession recipe's output tooltip with equipped-item comparisons.
@@ -33,6 +34,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Usage
 
+- At login and UI reload, the Instance tab receives party, party leader, raid, raid leader, raid warning, instance, and instance leader messages. A missing tab is created and docked with only those message groups; an existing tab keeps its other filters. Setup waits until combat ends if needed. If all chat slots are occupied, free a slot and reload. In-game validation is pending.
 - During combat, the main and R2 controller panels swap: no trigger selects the R2 panel, and holding R2 selects the main panel. Outside combat they retain native order. L2 and L2+R2 keep their normal panels; triggers are momentary. Releasing either trigger after L2+R2 clears both held states, returning to the combat-dependent default panel. Secure bindings and compact-panel visibility share the same selection, with native stance buttons for forms. Compact-panel scaling and selected-panel background highlighting follow the native controller settings. Scaling of the combat-swapped active panel is not supported in multi-panel mode; enlargement follows native focus instead. Secure geometry updates use the native button sizes and positions without invoking the native methods that tainted protected casting. Native focus animations and button prompts are not synchronized with the swap. Vehicle, possession, special pages, and targeting overrides defer to native behavior. Closing R1/L1 targeting panels restores combat-swapped bindings and visibility during combat, after all temporary override panels close. In-game validation is pending.
 - The full native watch list is reordered by ascending quest level before tracker layout chooses which quests fit. Equal levels keep their existing relative order; unavailable levels sort last. Reordering removes and immediately re-adds each watched quest through native APIs, preserving final membership and the super-tracked quest. It waits until combat ends. Native quest filters and special quest priorities still apply. Source and alpha packages report if the client rejects the requested order; in-game validation is pending.
 - Attack macros are created at login and when action bars or spells change, outside combat with an empty cursor. They cover the ten persistent keyboard pages, standard controller pages, and the active controller stance bar. Other controller stance bars are processed when activated. Temporary vehicle, possession, and override states defer conversion.

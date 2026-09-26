@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added an Instance chat tab with party, raid, and instance messages, including leaders and raid warnings, creating it only when missing.
 - Restored combat panel routing after R1/L1 targeting panels close, with guards for overlapping native overrides.
 
 - Stopped addon geometry updates in multi-panel mode to prevent scale oscillation against native focus updates; multi-panel enlargement follows native focus.

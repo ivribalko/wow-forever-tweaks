@@ -9,6 +9,7 @@
 ## SavedVariablesPerCharacter: ForeverTweaksAttackMacros, ForeverTweaksChatHistory
 
 ForeverTweaks.lua
+InstanceChat.lua
 ChatHistory.lua
 GamepadCamera.lua
 GamepadCombatPanels.lua
