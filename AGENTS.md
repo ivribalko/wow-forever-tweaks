@@ -10,23 +10,31 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Automatically replaces harmful spell actions with spell-casting macros that start autoattack in combat.
 - Automatically upgrades action-bar spells and makes spell references in macros rankless to use the highest learned rank.
 - Adds a small circular-arrow button at the minimap’s top-right corner to reload the interface.
-- Removes chat backgrounds and borders and shows chat tabs only on hover.
+- Removes chat backgrounds and borders and shows chat tabs only on hover outside gamepad chat focus.
+- Doubles chat height upward during gamepad chat focus and shows native artwork and all docked tabs until focus closes.
+- Shows chat input backgrounds and channel labels while focused, with input focus borders during gamepad chat expansion.
+- Expands chat input to the right for long drafts and shrinks it as text is removed.
+- Clears unsent chat text when gamepad Back closes chat focus.
+- Restores up to 120 recent messages per permanent chat tab after UI reload.
+- Sets chat messages to begin fading after 30 seconds, with native gamepad focus keeping messages visible.
 - Smoothly fades player and target frames, cast bars, and gamepad action bars between 40% opacity outside combat and 70% in combat.
 - Shows XP progress as a gold percentage beside the player name and hides the original XP artwork.
 - Shows maximum HP beside the level in friendly and hostile unit tooltips.
 - Binds controller inputs for the world map and inventory; PlayStation touchpad sides require the local mapping described below.
+- Swaps the main and R2 controller panels during combat with momentary triggers; releasing either trigger after L2+R2 clears both held states.
 - Makes the player turn with the gamepad camera while moving, including autorun.
 - Disables native gamepad touchpad cursor control for use with an external mouse mapper.
 - Disables automatic gamepad buff popups while keeping manual buff inspection available.
+- Enables tooltips in controller menus and sets `GamePadFactionColor` to `0` at login and UI reload.
+- Attempts to remove the controller-to-mouse overlap delay; the client still retains `2000`, so this adjustment is not working.
+- Includes a controller mapping restore tool for touchpad map/inventory shortcuts and native Share/Create menu actions.
 - Hides the floating beta Issue Reporter and automatic quest-reward feedback surveys.
-- Captures protected-action diagnostics in source and alpha packages for troubleshooting.
+- Captures protected-action failures, controller-panel state, and rejected quest ordering in source and alpha packages for troubleshooting.
 
 ## Usage
 
 - During combat, the main and R2 controller panels swap: no trigger selects the R2 panel, and holding R2 selects the main panel. Outside combat they retain native order. L2 and L2+R2 keep their normal panels; triggers are momentary. Releasing either trigger after L2+R2 clears both held states, returning to the combat-dependent default panel. Secure bindings and compact-panel visibility share the same selection, with native stance buttons for forms. Active enlargement, highlighting, and button prompts are not synchronized with the swapped panel: addon-driven native styling was removed after protected-action failures. Vehicle, possession, special pages, and targeting overrides defer to native behavior. In-game validation is pending.
-
 - The full native watch list is reordered by ascending quest level before tracker layout chooses which quests fit. Equal levels keep their existing relative order; unavailable levels sort last. Reordering removes and immediately re-adds each watched quest through native APIs, preserving final membership and the super-tracked quest. It waits until combat ends. Native quest filters and special quest priorities still apply. Source and alpha packages report if the client rejects the requested order; in-game validation is pending.
-
 - Attack macros are created at login and when action bars or spells change, outside combat with an empty cursor. They cover the ten persistent keyboard pages, standard controller pages, and the active controller stance bar. Other controller stance bars are processed when activated. Temporary vehicle, possession, and override states defer conversion.
 - Spells on scanned keyboard and controller bars upgrade to their highest learned rank, including heals and buffs. Unedited generated attack macros upgrade in place without requiring a free macro slot. Updates run outside combat with an empty cursor after login, spell learning, and bar changes; inactive controller stance bars update when activated. Pet bars and flyouts are left alone. Ambiguous same-name abilities are skipped. Rank upgrades remain enabled when attack macro conversion is disabled.
 - Generated macros omit ranks from their cast and tooltip lines so the game selects the highest learned rank automatically, with `/startattack [@target,combat,harm,nodead]` before `/cast`. The button must still be pressed. Harmful-action classification comes from Blizzard and can include crowd-control abilities; it is not a damage-only filter. Existing custom macros, items, flyouts, and autoattack/autorepeat spells are skipped by macro conversion.
@@ -67,7 +75,6 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 ## UI Source Reference
 
 - `Blizzard_Minimap/Camelot/Diel.lua` creates the day/night indicator as `MinimapCluster.DielFrame`, outside the Minimap widget, at frame level 5.
-
 - Search the [WoW UI source, Forever branch](https://github.com/Gethe/wow-ui-source/tree/forever) when investigating game UI behavior.
 - [BuffFrame.lua](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_BuffFrame/BuffFrame.lua) implements automatic gamepad aura popups: `Update` queues added and updated aura instances through `AddAuraForTooltip`, then `ShowNextAuraForTooltip` displays `BuffFrameTooltip`. The setting is `GamepadShowAutoAuraTooltip`.
 - [Blizzard_PTRFeedback_Frames.lua](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_PTRFeedback/Blizzard_PTRFeedback_Frames.lua) creates the floating `PTR_IssueReporter` panel in `CreateMainView`.
@@ -93,6 +100,7 @@ The project is licensed under the [MIT License](LICENSE). World of Warcraft and 
 
 ## Repository Rules
 
+- Keep every feature in the first Features list in `AGENTS.md`, and update that list whenever features are added, changed, or removed so it always reflects the current state.
 - Keep all debug logs and diagnostic-only code, event registrations, and SavedVariables declarations inside CurseForge alpha markers (`--@alpha@` / `--@end-alpha@` in Lua, `#@alpha@` / `#@end-alpha@` in TOC). Useful diagnostics may remain after troubleshooting; verify they are inactive in beta and release packages. Ordinary command responses and actionable user notices are not debug logs.
 - Treat “my other addon” as a reference to [UITweaks](https://github.com/ivribalko/UITweaks).
 - Require explicit manual confirmation before creating or amending commits and before pushing.

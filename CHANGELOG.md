@@ -3,28 +3,18 @@
 ## Unreleased
 
 - Moved combat visibility handling to explicitly protected child frames so native bar refreshes retain the selected panel.
-
 - Added bounded source/alpha controller-panel diagnostics for native refreshes, secure trigger state, and visibility before/after corrections.
-
 - Reapplied compact-panel visibility after native refreshes in combat without changing spell-button functions or styles.
-
 - Forced both trigger states released when either side of L2+R2 is released, preventing a retained R2 panel.
-
 - Removed addon-driven active-panel styling after it tainted the native button functions called before `UseAction`; swapped-panel enlargement and highlighting remain unsupported.
-
 - Refreshed controller panels after native form-bar updates outside combat, using the active native stance override.
-
 - Swapped the default and held-R2 controller panels during combat using secure click bindings; in-game validation is pending.
-
 - Added chat message restoration after UI reload, retaining up to 120 messages per permanent tab.
-
 - Show all addon-hidden native chat artwork during gamepad expansion, including every tab in the expanded dock and input focus borders.
-
 - Restricted the quest-order diagnostic and diagnostic SavedVariables declaration to source and alpha packages.
 - Doubled chat height upward from its existing bottom edge and instantly showed/hid the original background and frame on native gamepad chat focus changes without easing, restoring the previous size and anchors on exit.
 - Removed the forced chat window height and position.
 - Hid the chat input channel label and its suffixes when focus closes, including after canceling a draft with gamepad Circle/Back.
-
 - Made chat input expand to the right as drafts grow, shrinking when text is removed and stopping near the screen edge.
 - Enabled item tooltips in controller menus at login and UI reload.
 - Added automatic `GamePadFactionColor = 0` at login and UI reload.
