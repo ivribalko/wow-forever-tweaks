@@ -108,6 +108,8 @@ The project is licensed under the [MIT License](LICENSE). World of Warcraft and 
 
 ## Repository Rules
 
+- Do not add tests.
+
 - Keep every feature in the first Features list in `AGENTS.md`, and update that list whenever features are added, changed, or removed so it always reflects the current state.
 - Keep all debug logs and diagnostic-only code, event registrations, and SavedVariables declarations inside CurseForge alpha markers (`--@alpha@` / `--@end-alpha@` in Lua, `#@alpha@` / `#@end-alpha@` in TOC). Useful diagnostics may remain after troubleshooting; verify they are inactive in beta and release packages. Ordinary command responses and actionable user notices are not debug logs.
 - Treat “my other addon” as a reference to [UITweaks](https://github.com/ivribalko/UITweaks).
