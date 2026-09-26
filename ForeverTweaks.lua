@@ -47,10 +47,35 @@ touchpadBindings:SetScript("OnEvent", function(self)
 end)
 
 -- Hide decorative chat regions without writing settings or firing chat-config events.
+local focusedChatFrames = setmetatable({}, { __mode = "k" })
+local chatInputOwners = setmetatable({}, { __mode = "k" })
+local function IsChatExpanded(chatFrame)
+    if not chatFrame then
+        return false
+    end
+    for frame, state in pairs(focusedChatFrames) do
+        if state.alpha > 0 and (frame == chatFrame
+            or (frame.isDocked and chatFrame.isDocked and frame.dock
+                and frame.dock == chatFrame.dock)) then
+            return true
+        end
+    end
+    return false
+end
+
+local function RefreshChatTab(chatFrame)
+    local tab = _G[chatFrame:GetName() .. "Tab"]
+    if tab then
+        UIFrameFadeRemoveFrame(tab)
+        tab:SetAlpha((IsChatExpanded(chatFrame) or tab:IsMouseOver()) and 1 or 0)
+    end
+end
+
 local chatInputTextureSuffixes = { "Left", "Mid", "Right", "FocusLeft", "FocusMid", "FocusRight" }
 local chatInputHeaderKeys = { "header", "headerSuffix", "languageHeader" }
 local function RefreshChatInputBackground(editBox)
-    local active = editBox:IsShown() and editBox:HasFocus()
+    local expanded = IsChatExpanded(chatInputOwners[editBox])
+    local active = editBox:IsShown() and (editBox:HasFocus() or expanded)
     -- Native gamepad close can leave headers shown after releasing a nonempty draft.
     -- Alpha preserves native visibility decisions and header measurements.
     for _, key in ipairs(chatInputHeaderKeys) do
@@ -63,12 +88,11 @@ local function RefreshChatInputBackground(editBox)
         local texture = _G[editBox:GetName() .. suffix]
         if texture then
             local isFocusBorder = suffix:sub(1, 5) == "Focus"
-            texture:SetAlpha(active and not isFocusBorder and 1 or 0)
+            texture:SetAlpha(active and (not isFocusBorder or expanded) and 1 or 0)
         end
     end
 end
 
-local focusedChatFrames = setmetatable({}, { __mode = "k" })
 local function HideChatBackground(name)
     local state = focusedChatFrames[_G[name]]
     if state then
@@ -86,7 +110,7 @@ local function HideChatBackground(name)
     end
 end
 
--- Show native input artwork only while focused, keeping colored borders hidden.
+-- Show native input artwork while focused, including colored borders in expanded chat.
 local configuredChatInputs = setmetatable({}, { __mode = "k" })
 local function ConfigureChatInputBackground(chatFrame)
     local editBox = chatFrame and chatFrame.editBox
@@ -94,6 +118,7 @@ local function ConfigureChatInputBackground(chatFrame)
         return
     end
     configuredChatInputs[editBox] = true
+    chatInputOwners[editBox] = chatFrame
     for _, script in ipairs({ "OnEditFocusGained", "OnEditFocusLost", "OnShow", "OnHide" }) do
         editBox:HookScript(script, RefreshChatInputBackground)
     end
@@ -143,15 +168,23 @@ local function ConfigureGamepadChatFocus(chatFrame)
             if texture then
                 -- Cancel native hover fades so they cannot delay or override focus visibility.
                 UIFrameFadeRemoveFrame(texture)
-                texture:SetAlpha(opacity * state.alpha)
-                texture:SetShown(state.alpha > 0)
+                local expanded = IsChatExpanded(chatFrame)
+                texture:SetAlpha(expanded and opacity or 0)
+                texture:SetShown(expanded)
             end
         end
     end
 
     local function SetChatArtworkVisible(visible)
         state.alpha = visible and 1 or 0
-        state.refreshArtwork()
+        -- Docked tabs share the expanded window, including their native artwork.
+        for frame, frameState in pairs(focusedChatFrames) do
+            frameState.refreshArtwork()
+            RefreshChatTab(frame)
+            if frame.editBox then
+                RefreshChatInputBackground(frame.editBox)
+            end
+        end
     end
 
     local function RestoreChat()
@@ -201,6 +234,7 @@ for _, functionName in ipairs({ "FCF_FadeInChatFrame", "FCF_FadeOutChatFrame" })
         local state = focusedChatFrames[chatFrame]
         if state then
             state.refreshArtwork()
+            RefreshChatTab(chatFrame)
         end
     end)
 end
@@ -269,7 +303,7 @@ local function ConfigureGrowingChatInput(chatFrame)
     UpdateChatInputWidth(editBox)
 end
 
--- Keep chat tabs clickable, revealing each only while hovered, over a clear background.
+-- Reveal all tabs in an expanded dock; otherwise reveal each only while hovered.
 local function UpdateChatTabVisibility()
     for _, name in ipairs(CHAT_FRAMES or {}) do
         HideChatBackground(name)
@@ -278,9 +312,8 @@ local function UpdateChatTabVisibility()
         ConfigureGamepadChatFocus(_G[name])
         ConfigureChatMessageFade(_G[name])
         ConfigureGrowingChatInput(_G[name])
-        local tab = _G[name .. "Tab"]
-        if tab then
-            tab:SetAlpha(tab:IsMouseOver() and 1 or 0)
+        if _G[name] then
+            RefreshChatTab(_G[name])
         end
     end
 end
