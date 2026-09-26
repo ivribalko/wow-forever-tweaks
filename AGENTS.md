@@ -16,7 +16,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Shows chat input backgrounds and channel labels while focused, with input focus borders during gamepad chat expansion.
 - Expands chat input to the right for long drafts and shrinks it as text is removed.
 - Clears unsent chat text when gamepad Back closes chat focus.
-- Restores up to 120 recent messages per permanent chat tab after UI reload.
+- Restores up to 120 recent messages per permanent chat tab and reopens regular and Battle.net friend whisper tabs after UI reload.
 - Sets chat messages to begin fading after 30 seconds, with native gamepad focus keeping messages visible.
 - Smoothly fades player and target frames, cast bars, and gamepad action bars between 40% opacity outside combat and 70% in combat.
 - Shows XP progress as a gold percentage beside the player name and hides the original XP artwork.
@@ -61,7 +61,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - The addon attempts to set `GamePadOverlapMouseMs = 0` at login and UI reload for external mouse mappers. This currently does not work: the client reports `2000` even after a successful direct write. The cause is unconfirmed.
 - Pressing gamepad Back while editing chat clears the unsent text as native chat focus closes. The channel label and its suffixes hide when input loses focus and return when focused. Channel retention follows native sticky-chat behavior.
 - Gamepad chat input activation follows native behavior. The addon does not force hidden classic-style input open; use native IM chat style for gamepad input.
-- UI reload restores up to 120 recent messages per permanent chat tab, preserving text, links, colors, and order ahead of new login messages. Combat logs and temporary whisper tabs are excluded. History is stored in character SavedVariables in the client WTF directory and is not restored on a fresh login. Messages from before this feature loaded cannot be recovered. In-game validation is pending.
+- UI reload restores up to 120 recent messages per permanent chat tab, preserving text, links, colors, and order ahead of new login messages. Open regular and Battle.net friend whisper tabs are recreated and restored too; closed tabs and combat logs are excluded. Battle.net recipients are matched by BattleTag after the friend list becomes available; unresolved tabs wait until a later friend-list update. Restricted recipients cannot be saved. Old Battle.net sender links restore as text; unrelated opaque name tokens display as [Battle.net]. History is stored in character SavedVariables in the client WTF directory and is cleared on a fresh login. Closing a whisper tab excludes it from the next saved snapshot. Messages from before this feature loaded cannot be recovered. In-game validation is pending.
 - Chat messages begin their native fade after 30 seconds. Native gamepad chat focus keeps messages visible and resets their fade timers when focus closes.
 - Chat tabs are visible throughout gamepad chat expansion, including every tab in the same dock. Otherwise they are invisible until individually hovered, matching UITweaks, including newly opened tabs. They remain clickable.
 - Automatic gamepad aura popups are disabled through `GamepadShowAutoAuraTooltip`, including Plainsrunning stack popups. Manual buff inspection remains available. This client setting persists if the addon is disabled; restore it with `/console GamepadShowAutoAuraTooltip 1`.

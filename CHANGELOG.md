@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Restored open regular and Battle.net friend whisper tabs across UI reloads, excluding closed tabs and clearing history on fresh login.
+
 - Added an Instance chat tab with party, raid, and instance messages, including leaders and raid warnings, creating it only when missing.
 - Restored combat panel routing after R1/L1 targeting panels close, with guards for overlapping native overrides.
 
