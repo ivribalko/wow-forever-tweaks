@@ -2,15 +2,17 @@
 
 ## Unreleased
 
+- Stopped addon geometry updates in multi-panel mode to prevent scale oscillation against native focus updates; multi-panel enlargement follows native focus.
+
 - Fixed restricted button anchoring by using explicitly protected child anchors instead of native bar handles.
 
-- Added native-size active-panel scaling and background highlighting through secure geometry updates and texture-only changes, preserving native spell-button methods.
+- Added native-size active-panel scaling in compact mode and selected-panel background highlighting through secure geometry updates and texture-only changes, preserving native spell-button methods. Multi-panel scaling of the combat-swapped selection is unsupported because native focus resizing conflicts with addon geometry.
 
 - Moved combat visibility handling to explicitly protected child frames so native bar refreshes retain the selected panel.
 - Added bounded source/alpha controller-panel diagnostics for native refreshes, secure trigger state, and visibility before/after corrections.
 - Reapplied compact-panel visibility after native refreshes in combat without changing spell-button functions or styles.
 - Forced both trigger states released when either side of L2+R2 is released, preventing a retained R2 panel.
-- Removed addon-driven active-panel styling after it tainted the native button functions called before `UseAction`; swapped-panel enlargement and highlighting remain unsupported.
+- Removed calls to native active-panel styling methods after they tainted button functions called before `UseAction`; compact scaling and background highlighting use separate geometry/texture updates.
 - Refreshed controller panels after native form-bar updates outside combat, using the active native stance override.
 - Swapped the default and held-R2 controller panels during combat using secure click bindings; in-game validation is pending.
 - Added chat message restoration after UI reload, retaining up to 120 messages per permanent tab.

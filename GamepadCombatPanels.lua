@@ -17,6 +17,13 @@ local layouts = {
 
 local APPEARANCE = [[
     if not self:GetAttribute("enabled") then return end
+    -- Multi-panel bars stay visible during native focus changes, so no secure
+    -- visibility event follows the native resize. Leave their geometry native
+    -- instead of alternating native and addon dimensions on action clicks.
+    if not self:GetAttribute("compact") then
+        self:CallMethod("RefreshFocusTextures")
+        return
+    end
     local selected = self:GetAttribute("selected")
     for i = 1, 5 do
         local bar = self:GetFrameRef("bar-" .. i)
