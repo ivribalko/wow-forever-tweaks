@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Restored combat panel routing after R1/L1 targeting panels close, with guards for overlapping native overrides.
+
 - Stopped addon geometry updates in multi-panel mode to prevent scale oscillation against native focus updates; multi-panel enlargement follows native focus.
 
 - Fixed restricted button anchoring by using explicitly protected child anchors instead of native bar handles.

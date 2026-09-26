@@ -123,6 +123,17 @@ local RESET = [[
     end
 ]]
 
+-- Resume after temporary native targeting panels close, including in combat.
+local RESUME = [[
+    if not self:GetAttribute("resume-enabled") or self:GetAttribute("state-special") == "blocked" then return end
+    for i = 1, self:GetAttribute("override-count") do
+        if self:GetFrameRef("override-" .. i):IsShown() then return end
+    end
+    self:SetAttribute("resume-enabled", nil)
+    self:SetAttribute("enabled", true)
+    self:RunAttribute("reset")
+]]
+
 --@alpha@
 -- Capture panel transitions without changing native frames or their routing.
 local lastPanelSignature
@@ -203,6 +214,8 @@ local function Install()
     latch:SetAttribute("keys", 0)
     latch:SetAttribute("refresh", REFRESH)
     latch:SetAttribute("reset", RESET)
+    latch:SetAttribute("resume", RESUME)
+    latch:SetAttribute("override-count", 0)
     latch:SetAttribute("_onclick", CLICK)
     for i, name in ipairs(names) do
         local bar = page.actionBars[name]
@@ -271,20 +284,32 @@ local function Install()
     RegisterStateDriver(latch, "combat", "[combat]combat;peace")
     RegisterStateDriver(latch, "form", "[form:1]1;[form:2]2;[form:3]3;[form:4]4;[form:5]5;[form:6]6;[form:7]7;[form:8]8;0")
     latch:SetAttribute("_onstate-special", [[
-        self:SetAttribute("enabled", false)
-        self:RunAttribute("reset")
+        if newstate == "blocked" then
+            if self:GetAttribute("enabled") then self:SetAttribute("resume-enabled", true) end
+            self:SetAttribute("enabled", false)
+            self:RunAttribute("reset")
+        else
+            self:RunAttribute("resume")
+        end
     ]])
     RegisterStateDriver(latch, "special", "[vehicleui][possessbar][overridebar]blocked;ready")
+    local overrideCount = 0
     for _, bar in ipairs(page.overrideBars) do
         if bar ~= page.actionBars.stanceBar then
+            overrideCount = overrideCount + 1
+            latch:SetFrameRef("override-" .. overrideCount, bar)
             local overrideDriver = CreateFrame("Frame", nil, bar, "SecureHandlerBaseTemplate")
             SecureHandlerWrapScript(overrideDriver, "OnShow", latch, [[
+                if control:GetAttribute("enabled") then control:SetAttribute("resume-enabled", true) end
                 control:SetAttribute("enabled", false)
                 control:RunAttribute("reset")
             ]])
+            SecureHandlerWrapScript(overrideDriver, "OnHide", latch,
+                [[ control:RunAttribute("resume") ]])
             overrideDriver:Show()
         end
     end
+    latch:SetAttribute("override-count", overrideCount)
 end
 
 local dirty = true
@@ -311,6 +336,7 @@ local function Update()
     end
     if dirty or enabled ~= latch:GetAttribute("enabled")
         or setting ~= latch:GetAttribute("setting") or compact ~= latch:GetAttribute("compact") then
+        latch:SetAttribute("resume-enabled", nil)
         latch:SetAttribute("enabled", false)
         latch:Execute(RESET)
         local position = 0
