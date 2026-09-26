@@ -23,6 +23,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Usage
 
+- During combat, the main and R2 controller panels swap: no trigger selects the R2 panel, and holding R2 selects the main panel. Outside combat they retain native order. L2 and L2+R2 keep their normal panels; triggers are momentary. Releasing either trigger after L2+R2 clears both held states, returning to the combat-dependent default panel. Secure bindings and compact-panel visibility share the same selection, with native stance buttons for forms. Active enlargement, highlighting, and button prompts are not synchronized with the swapped panel: addon-driven native styling was removed after protected-action failures. Vehicle, possession, special pages, and targeting overrides defer to native behavior. In-game validation is pending.
+
 - The full native watch list is reordered by ascending quest level before tracker layout chooses which quests fit. Equal levels keep their existing relative order; unavailable levels sort last. Reordering removes and immediately re-adds each watched quest through native APIs, preserving final membership and the super-tracked quest. It waits until combat ends. Native quest filters and special quest priorities still apply. Source and alpha packages report if the client rejects the requested order; in-game validation is pending.
 
 - Attack macros are created at login and when action bars or spells change, outside combat with an empty cursor. They cover the ten persistent keyboard pages, standard controller pages, and the active controller stance bar. Other controller stance bars are processed when activated. Temporary vehicle, possession, and override states defer conversion.

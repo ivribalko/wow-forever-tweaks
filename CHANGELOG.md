@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Moved combat visibility handling to explicitly protected child frames so native bar refreshes retain the selected panel.
+
+- Added bounded source/alpha controller-panel diagnostics for native refreshes, secure trigger state, and visibility before/after corrections.
+
+- Reapplied compact-panel visibility after native refreshes in combat without changing spell-button functions or styles.
+
+- Forced both trigger states released when either side of L2+R2 is released, preventing a retained R2 panel.
+
+- Removed addon-driven active-panel styling after it tainted the native button functions called before `UseAction`; swapped-panel enlargement and highlighting remain unsupported.
+
+- Refreshed controller panels after native form-bar updates outside combat, using the active native stance override.
+
+- Swapped the default and held-R2 controller panels during combat using secure click bindings; in-game validation is pending.
+
 - Added chat message restoration after UI reload, retaining up to 120 messages per permanent tab.
 
 - Show all addon-hidden native chat artwork during gamepad expansion, including every tab in the expanded dock and input focus borders.

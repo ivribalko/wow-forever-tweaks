@@ -11,6 +11,7 @@
 ForeverTweaks.lua
 ChatHistory.lua
 GamepadCamera.lua
+GamepadCombatPanels.lua
 QuestTracker.lua
 PlayerFrameXP.lua
 Merchant.lua
