@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Bound the right touchpad click to the world map and the left click to regular inventory using native bindings.
+
 - Separated L2/R2 click targets to avoid overlapping trigger presses sharing button release tracking.
 
 - Removed combat-panel button sizing, positioning, frame-level changes, background highlighting, and action-button click hooks; retained secure panel routing and compact visibility.

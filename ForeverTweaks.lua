@@ -41,8 +41,8 @@ touchpadBindings:SetScript("OnEvent", function(self)
         self:RegisterEvent("PLAYER_REGEN_ENABLED")
         return
     end
-    SetOverrideBinding(self, false, "PAD6", "OPENALLBAGS")
-    SetOverrideBinding(self, false, "PADPADDLE1", "TOGGLEWORLDMAP")
+    SetOverrideBinding(self, false, "PAD6", "TOGGLEWORLDMAP")
+    SetOverrideBinding(self, false, "PADPADDLE1", "OPENALLBAGS")
     self:UnregisterAllEvents()
 end)
 
