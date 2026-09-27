@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Changed level-badge XP to a hollow gold and blue progress ring inset beneath the outer rim.
+
 - Used the native standalone circular mask to clip XP fills inside the level badge.
 
 - Replaced player XP text with gold earned-XP and blue rested-XP radial fills with a sharp start boundary at the top inside the circular level badge and restored the native name line.

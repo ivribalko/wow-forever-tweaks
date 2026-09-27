@@ -1,4 +1,4 @@
--- Fill the level badge with earned and rested XP while preserving the native name row.
+-- Trace earned and rested XP around the inside of the level badge rim.
 local xpFill
 local restedFill
 local levelCircle
@@ -54,26 +54,19 @@ local function InitializePlayerXP()
         local main = content and content.PlayerFrameContentMain
         levelCircle = main and main.LevelBackgroundCircle
         if levelCircle then
-            local mask = main:CreateMaskTexture()
-            -- Use Blizzard's standalone circular mask with the native mask wrapping modes.
-            mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask",
-                "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-            mask:SetPoint("TOPLEFT", levelCircle, "TOPLEFT", 4, -4)
-            mask:SetPoint("BOTTOMRIGHT", levelCircle, "BOTTOMRIGHT", -4, 4)
-
-            -- Static radial animations clip the textures into wedges without a ticking cooldown.
+            -- Static radial animations clip the hollow ring into arcs without a ticking cooldown.
             local function CreateSweep(red, green, blue, sublevel)
                 local fill = main:CreateTexture(nil, "OVERLAY", nil, sublevel)
-                fill:SetColorTexture(red, green, blue, 1)
+                fill:SetTexture("Interface\\AddOns\\ForeverTweaks\\XPRing")
+                fill:SetVertexColor(red, green, blue, 1)
                 -- Native radial progress starts at the bottom; rotate both sweeps to twelve o'clock.
                 fill:SetRotation(math.pi)
                 -- Keep native angular bounds and avoid a zero-width shader feather.
                 if fill.SetRadialProgressBarFeather then
                     fill:SetRadialProgressBarFeather(0.001)
                 end
-                fill:SetPoint("TOPLEFT", levelCircle, "TOPLEFT", 4, -4)
-                fill:SetPoint("BOTTOMRIGHT", levelCircle, "BOTTOMRIGHT", -4, 4)
-                fill:AddMaskTexture(mask)
+                fill:SetPoint("TOPLEFT", levelCircle, "TOPLEFT", 6, -6)
+                fill:SetPoint("BOTTOMRIGHT", levelCircle, "BOTTOMRIGHT", -6, 6)
                 local group = fill:CreateAnimationGroup()
                 local sweep = group:CreateAnimation("RadialProgress")
                 sweep:SetDuration(1)
