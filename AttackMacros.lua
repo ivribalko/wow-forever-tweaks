@@ -31,11 +31,16 @@ local function ActionSlots()
     return slots
 end
 
+-- The client may append a final newline when storing macro text.
+local function NormalizeBody(body)
+    return body and body:gsub("\r\n", "\n"):gsub("\n+$", "")
+end
+
 local function OwnedMacro(index)
     if index <= Constants.MacroConsts.MAX_ACCOUNT_MACROS then return end
     local name, _, body = GetMacroInfo(index)
     for key, record in pairs(state.macros) do
-        if (name == "+" or name == key) and record.body == body then return record end
+        if (name == "+" or name == key) and NormalizeBody(record.body) == NormalizeBody(body) then return record end
     end
 end
 
@@ -46,7 +51,7 @@ local function RenameOwnedMacros()
     for key, record in pairs(state.macros) do
         for index = base + 1, base + count do
             local name, _, body = GetMacroInfo(index)
-            if name == key and body == record.body then
+            if name == key and NormalizeBody(body) == NormalizeBody(record.body) then
                 EditMacro(index, "+")
                 break
             end
@@ -97,6 +102,78 @@ local function MacroContents(spellID)
     return body, info.iconID
 end
 
+-- Recover generated entries whose old spell-ID ownership was lost or overwritten.
+-- Only the exact generated commands and generated names qualify.
+local function RecoverOwnedMacros()
+    local base = Constants.MacroConsts.MAX_ACCOUNT_MACROS
+    local _, count = GetNumMacros()
+    for index = base + 1, base + count do
+        local name, _, body = GetMacroInfo(index)
+        body = NormalizeBody(body)
+        if not OwnedMacro(index) and name and (name == "+" or name:match("^FT %d+$")) then
+            local spell = body and body:match("^#showtooltip ([^\n]+)\n")
+            local info = spell and C_Spell.GetSpellInfo(spell)
+            if info and MacroContents(info.spellID) == body then
+                local key = name ~= "+" and name or "recovered:" .. body
+                state.macros[key] = { spellID = info.spellID, body = body }
+            end
+        end
+    end
+end
+
+-- Include inactive controller stance storage when redirecting duplicate references.
+local function CleanupSlots()
+    local slots = {}
+    local first = C_GamepadUI and C_GamepadUI.GetFirstGamepadActionStorageSlotIndex()
+    for slot = 1, (first and first - 1 or 120) do slots[#slots + 1] = slot end
+    if first then
+        local slot = first
+        while C_GamepadUI.IsValidGamepadActionStorageSlotIndex(slot) do
+            slots[#slots + 1] = slot
+            slot = slot + 1
+        end
+    end
+    return slots
+end
+
+local function ConsolidateOwnedMacros()
+    local base = Constants.MacroConsts.MAX_ACCOUNT_MACROS
+    local _, count = GetNumMacros()
+    local keepers, duplicates = {}, {}
+    for index = base + 1, base + count do
+        local record = OwnedMacro(index)
+        if record then
+            local body = NormalizeBody(record.body)
+            if keepers[body] then
+                duplicates[#duplicates + 1] = { index = index, keeper = keepers[body] }
+            else
+                keepers[body] = index
+            end
+        end
+    end
+    if #duplicates == 0 then return end
+    local slots = CleanupSlots()
+    -- Delete descending indices: every keeper is lower than its duplicate and
+    -- earlier deletions cannot invalidate the remaining indices.
+    for i = #duplicates, 1, -1 do
+        local duplicate = duplicates[i]
+        local safe = true
+        for _, slot in ipairs(slots) do
+            local kind, id = GetActionInfo(slot)
+            if kind == "macro" and id == duplicate.index then
+                PickupMacro(duplicate.keeper)
+                local cursorKind, cursorID = GetCursorInfo()
+                if cursorKind == "macro" and cursorID == duplicate.keeper then PlaceAction(slot) end
+                ClearCursor()
+                kind, id = GetActionInfo(slot)
+                if kind ~= "macro" or id ~= duplicate.keeper then safe = false end
+            end
+        end
+        -- A rejected placement leaves the duplicate intact for a later retry.
+        if safe then DeleteMacro(duplicate.index) end
+    end
+end
+
 local function UpgradeOwnedMacros(upgrades)
     local base = Constants.MacroConsts.MAX_ACCOUNT_MACROS
     local _, count = GetNumMacros()
@@ -127,7 +204,7 @@ local function EnsureMacro(spellID)
     local _, count = GetNumMacros()
     for index = base + 1, base + count do
         local record = OwnedMacro(index)
-        if record and record.spellID == spellID and record.body == body then return index end
+        if record and NormalizeBody(record.body) == body then return index end
     end
     local limit = Constants.MacroConsts.MAX_CHARACTER_MACROS
     if count >= limit then
@@ -150,9 +227,11 @@ local function Synchronize()
         or C_ActionBar.HasVehicleActionBar() or C_ActionBar.IsPossessBarVisible()
         or C_ActionBar.HasTempShapeshiftActionBar() then return end
     working = true
+    RecoverOwnedMacros()
     RenameOwnedMacros()
     local upgrades, rankless = SpellUpgrades()
     UpgradeOwnedMacros(upgrades)
+    ConsolidateOwnedMacros()
     addon.UpgradeCustomMacroRanks(rankless, OwnedMacro)
     for _, slot in ipairs(ActionSlots()) do
         local kind, id = GetActionInfo(slot)

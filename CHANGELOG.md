@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Consolidated duplicate generated attack macros while preserving action-bar assignments, recovered missing generated-macro ownership, and reused identical commands across ranks and normalized line endings before allocating slots.
+
 - Hid the player name while retaining XP text in its row.
 
 - Added available rested XP to the player XP text as `50% (+30%)`, with automatic text width to prevent ellipsis.
