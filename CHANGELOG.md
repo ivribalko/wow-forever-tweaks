@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Expanded gamepad-focused chat upward to match its top screen margin to its bottom margin.
+
 - Bound the right touchpad click to the world map and the left click to regular inventory using native bindings.
 
 - Separated L2/R2 click targets to avoid overlapping trigger presses sharing button release tracking.

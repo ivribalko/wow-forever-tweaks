@@ -215,10 +215,13 @@ local function ConfigureGamepadChatFocus(chatFrame)
             end
             -- Pin the existing bottom-left corner so all extra height extends upward.
             local scale = UIParent:GetEffectiveScale() / owner:GetEffectiveScale()
+            local bottomOffset = bottom - UIParent:GetBottom() * scale
+            -- Mirror the bottom screen margin above the expanded chat frame.
+            local expandedHeight = UIParent:GetHeight() * scale - 2 * bottomOffset
             owner:ClearAllPoints()
             owner:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT",
-                left - UIParent:GetLeft() * scale, bottom - UIParent:GetBottom() * scale)
-            owner:SetSize(state.width, state.height * 2)
+                left - UIParent:GetLeft() * scale, bottomOffset)
+            owner:SetSize(state.width, math.max(state.height, expandedHeight))
         end
         SetChatArtworkVisible(true)
     end)
