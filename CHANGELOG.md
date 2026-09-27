@@ -2,13 +2,13 @@
 
 ## Unreleased
 
+- Used the native standalone circular mask to clip XP fills inside the level badge.
+
+- Replaced player XP text with gold earned-XP and blue rested-XP radial fills with a sharp start boundary at the top inside the circular level badge and restored the native name line.
+
 - Excluded helpful spells from attack-macro conversion and restored their unedited generated macros to spell buttons before freeing the macro slots.
 
 - Consolidated duplicate generated attack macros while preserving action-bar assignments, recovered missing generated-macro ownership, and reused identical commands across ranks and normalized line endings before allocating slots.
-
-- Hid the player name while retaining XP text in its row.
-
-- Added available rested XP to the player XP text as `50% (+30%)`, with automatic text width to prevent ellipsis.
 
 - Restored open regular and Battle.net friend whisper tabs across UI reloads, excluding closed tabs and clearing history on fresh login.
 

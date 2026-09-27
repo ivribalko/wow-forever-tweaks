@@ -1,25 +1,32 @@
--- Display XP in the player name row, following UITweaks' compact percentage style.
-local xpText
+-- Fill the level badge with earned and rested XP while preserving the native name row.
+local xpFill
+local restedFill
+local levelCircle
+local xpSweep
+local restedSweep
 local hookedContainers = setmetatable({}, { __mode = "k" })
 
 local function UpdatePlayerXP()
-    if not xpText then
+    if not xpFill then
         return
     end
-    PlayerName:SetAlpha(0)
     local maximum = UnitXPMax("player")
-    if PlayerFrame.unit ~= "player" or not GameRulesUtil.CanShowExperienceBar() or maximum <= 0 then
-        xpText:Hide()
+    if PlayerFrame.unit ~= "player" or not GameRulesUtil.CanShowExperienceBar() or maximum <= 0
+        or not levelCircle:IsShown() or not PlayerLevelText:IsShown() then
+        xpFill:Hide()
+        restedFill:Hide()
         return
     end
-    local percentage = math.floor(UnitXP("player") / maximum * 100)
-    local rested = GetXPExhaustion()
-    if rested and rested > 0 then
-        xpText:SetFormattedText("%d%% (+%d%%)", percentage, math.floor(rested / maximum * 100))
-    else
-        xpText:SetFormattedText("%d%%", percentage)
-    end
-    xpText:Show()
+
+    local progress = math.max(0, math.min(UnitXP("player") / maximum, 1))
+    local rested = math.max(0, math.min((GetXPExhaustion() or 0) / maximum, 1 - progress))
+    -- The blue sweep includes earned XP; the gold sweep covers that portion above it.
+    xpSweep:SetFromPercent(progress)
+    xpSweep:SetToPercent(progress)
+    restedSweep:SetFromPercent(progress + rested)
+    restedSweep:SetToPercent(progress + rested)
+    xpFill:SetShown(progress > 0)
+    restedFill:SetShown(rested > 0)
 end
 
 -- Mask artwork without hooking Blizzard's bar-assignment or animation methods.
@@ -42,25 +49,51 @@ local function HideOriginalXP(container)
 end
 
 local function InitializePlayerXP()
-    if not xpText and PlayerFrame and PlayerName then
+    if not xpFill and PlayerFrame and PlayerLevelText then
         local content = PlayerFrame.PlayerFrameContent
         local main = content and content.PlayerFrameContentMain
-        if main then
-            xpText = main:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall", 1)
-            -- A single anchor and automatic width keep the rested suffix untruncated.
-            xpText:SetHeight(12)
-            xpText:SetWordWrap(false)
-            -- Forever's level badge is below the portrait, separate from the name row.
-            xpText:SetPoint("RIGHT", PlayerName, "RIGHT", 0, 0)
-            xpText:SetJustifyH("RIGHT")
-            xpText:SetTextColor(1, 0.82, 0)
+        levelCircle = main and main.LevelBackgroundCircle
+        if levelCircle then
+            local mask = main:CreateMaskTexture()
+            -- Use Blizzard's standalone circular mask with the native mask wrapping modes.
+            mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask",
+                "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+            mask:SetPoint("TOPLEFT", levelCircle, "TOPLEFT", 4, -4)
+            mask:SetPoint("BOTTOMRIGHT", levelCircle, "BOTTOMRIGHT", -4, 4)
+
+            -- Static radial animations clip the textures into wedges without a ticking cooldown.
+            local function CreateSweep(red, green, blue, sublevel)
+                local fill = main:CreateTexture(nil, "OVERLAY", nil, sublevel)
+                fill:SetColorTexture(red, green, blue, 1)
+                -- Native radial progress starts at the bottom; rotate both sweeps to twelve o'clock.
+                fill:SetRotation(math.pi)
+                -- Keep native angular bounds and avoid a zero-width shader feather.
+                if fill.SetRadialProgressBarFeather then
+                    fill:SetRadialProgressBarFeather(0.001)
+                end
+                fill:SetPoint("TOPLEFT", levelCircle, "TOPLEFT", 4, -4)
+                fill:SetPoint("BOTTOMRIGHT", levelCircle, "BOTTOMRIGHT", -4, 4)
+                fill:AddMaskTexture(mask)
+                local group = fill:CreateAnimationGroup()
+                local sweep = group:CreateAnimation("RadialProgress")
+                sweep:SetDuration(1)
+                sweep:SetFromPercent(0)
+                sweep:SetToPercent(0)
+                group:SetLooping("REPEAT")
+                group:Play()
+                return fill, sweep
+            end
+            restedFill, restedSweep = CreateSweep(0.15, 0.5, 0.95, 5)
+            xpFill, xpSweep = CreateSweep(0.85, 0.58, 0.08, 6)
+            PlayerLevelText:SetDrawLayer("OVERLAY", 7)
+
             for _, name in ipairs({ "PlayerFrame_UpdateRolesAssigned", "PlayerFrame_ToPlayerArt", "PlayerFrame_ToVehicleArt" }) do
                 hooksecurefunc(name, UpdatePlayerXP)
             end
         end
     end
     local manager = StatusTrackingBarManager
-    if xpText and manager and manager.barContainers then
+    if xpFill and manager and manager.barContainers then
         for _, container in ipairs(manager.barContainers) do
             if not hookedContainers[container] then
                 -- Native fades can switch bars and rebuild dividers while already shown.
