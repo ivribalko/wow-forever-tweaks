@@ -33,19 +33,6 @@ button:SetScript("OnClick", function()
     end
 end)
 
--- The controller maps the left touchpad to PADPADDLE1 and the right to PAD6.
-local touchpadBindings = CreateFrame("Frame")
-touchpadBindings:RegisterEvent("PLAYER_LOGIN")
-touchpadBindings:SetScript("OnEvent", function(self)
-    if InCombatLockdown() then
-        self:RegisterEvent("PLAYER_REGEN_ENABLED")
-        return
-    end
-    SetOverrideBinding(self, false, "PAD6", "TOGGLEWORLDMAP")
-    SetOverrideBinding(self, false, "PADPADDLE1", "OPENALLBAGS")
-    self:UnregisterAllEvents()
-end)
-
 -- Hide decorative chat regions without writing settings or firing chat-config events.
 local focusedChatFrames = setmetatable({}, { __mode = "k" })
 local chatInputOwners = setmetatable({}, { __mode = "k" })

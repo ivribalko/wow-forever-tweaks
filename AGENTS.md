@@ -21,14 +21,13 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Smoothly fades player and target frames, cast bars, and gamepad action bars between 40% opacity outside combat and 70% in combat.
 - Shows earned XP as a hollow gold progress ring starting at the top and rested XP as a blue arc just inside the player level indicator’s outer rim, preserving the native level number and name line and hiding the original XP artwork.
 - Shows maximum HP beside the level in friendly and hostile unit tooltips.
-- Binds the right touchpad click to the world map and the left click to regular inventory; PlayStation touchpad sides require the local mapping described below.
 - Swaps the main and R2 controller panels during combat with momentary triggers, leaving button appearance and click handlers under native control; separate trigger input handlers preserve the other held trigger on release and return to the default panel when both are released.
 - Makes the player turn with the gamepad camera while moving, including autorun.
 - Disables native gamepad touchpad cursor control for use with an external mouse mapper.
 - Disables automatic gamepad buff popups while keeping manual buff inspection available.
 - Enables tooltips in controller menus and sets `GamePadFactionColor` to `0` at login and UI reload.
 - Attempts to remove the controller-to-mouse overlap delay; the client still retains `2000`, so this adjustment is not working.
-- Includes a controller mapping restore tool for touchpad map/inventory shortcuts and native Share/Create menu actions.
+- Includes a controller mapping restore tool for touchpad input mappings and native Share/Create menu actions.
 - Hides the floating beta Issue Reporter and automatic quest-reward feedback surveys.
 - Captures protected-action failures, controller-panel state, and rejected quest ordering in source and alpha packages for troubleshooting.
 
@@ -50,7 +49,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - The minimap reload button uses a native refresh symbol and the same circular rim as the day/night indicator. The AddOns list uses the bundled circular-arrow artwork.
 - Restart the game if the newly created addon is absent from the list.
 - The button has no text, configuration, or external dependencies.
-- The PlayStation controller's right touchpad click toggles the world map through `PAD6`; its left touchpad click toggles regular inventory through `PADPADDLE1` using the native `OPENALLBAGS` binding. In-game validation is pending. A local `WTF/GamePadConfig_*.json` mapping assigns the left-side input to `PADPADDLE1` and the right-side input to `PAD6`; restart the game after changing that mapping. The addon bindings last only while enabled. Restore mappings for DualSense and DualSense Edge with the [controller restore tool](tools/CONTROLLERS.md).
+- The addon does not bind touchpad clicks to map or inventory. The [controller restore tool](tools/CONTROLLERS.md) configures device inputs separately; it does not assign in-game actions.
 - The local controller mapping assigns DualSense Share/Create to `PADBACK` for native menu actions, including Search in professions. Native prompts may still show the left-touchpad symbol. Restart the client after restoring mappings.
 - Chat backgrounds and decorative borders, including side-button backgrounds, are hidden even on hover. Gamepad chat focus (L1+R1+Down) temporarily expands the chat window upward from its existing bottom edge to leave the same screen margin above as below (without shrinking taller windows) and instantly shows the native chat elements hidden by this addon, including backgrounds, decorative frames, all tabs in the same dock, and input focus borders. Leaving focus restores the previous height and instantly hides the artwork, without animation or easing. Original size and anchors return when focus closes; saved background settings are not changed. In-game validation is pending.
 - Chat input background shows immediately while the input has focus and hides immediately when focus closes, including IM-style input. It follows the expanding input width. The colored focus border shows while chat is expanded and stays hidden otherwise; input text remains under native control. In-game validation is pending.
@@ -89,7 +88,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 - Connect the repository to a CurseForge project and select tag-only packaging using the [automatic packaging instructions](https://support.curseforge.com/support/solutions/articles/9000197281). Keep integration tokens in service settings, never in tracked files.
 - Update the changelog before tagging. Use `MAJOR.MINOR.PATCH-beta.NUMBER` for Beta, `MAJOR.MINOR.PATCH` for Release, and tags containing `alpha` for Alpha.
-- Complete in-game acceptance checks before a Release tag, including reload, chat, combat fades, XP display, and controller shortcuts. Verify the published file’s game-version labels match Forever.
+- Complete in-game acceptance checks before a Release tag, including reload, chat, combat fades, XP display, and controller behavior. Verify the published file’s game-version labels match Forever.
 - Commit and push the intended revision and tag only after manual confirmation. CurseForge packages that revision and substitutes the version.
 
 Source and alpha packages retain protected-action diagnostics and the quest-order rejection log. Beta and release packages comment out diagnostic code through `--@alpha@` / `--@end-alpha@` markers and the diagnostic SavedVariables declaration through `#@alpha@` / `#@end-alpha@` markers, following [CurseForge's alpha replacements](https://support.curseforge.com/support/solutions/articles/9000197281). Zipping raw source retains diagnostics and does not substitute the version token. The aura-tooltip client setting persists after disabling the addon; restore it with `/console GamepadShowAutoAuraTooltip 1`.
