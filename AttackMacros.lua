@@ -174,6 +174,34 @@ local function ConsolidateOwnedMacros()
     end
 end
 
+-- Helpful spells do not need attack macros; restore every stored bar reference
+-- before reclaiming the generated macro's slot.
+local function RestoreHelpfulMacros(upgrades)
+    local base = Constants.MacroConsts.MAX_ACCOUNT_MACROS
+    local _, count = GetNumMacros()
+    local slots
+    for index = base + count, base + 1, -1 do
+        local record = OwnedMacro(index)
+        local spellID = record and (upgrades[record.spellID] or record.spellID)
+        if spellID and C_Spell.IsSpellHelpful(spellID) then
+            slots = slots or CleanupSlots()
+            local safe = true
+            for _, slot in ipairs(slots) do
+                local kind, id = GetActionInfo(slot)
+                if kind == "macro" and id == index then
+                    C_Spell.PickupSpell(spellID)
+                    local cursorKind, _, _, cursorSpellID = GetCursorInfo()
+                    if cursorKind == "spell" and cursorSpellID == spellID then PlaceAction(slot) end
+                    ClearCursor()
+                    kind, id = GetActionInfo(slot)
+                    if kind ~= "spell" or id ~= spellID then safe = false end
+                end
+            end
+            if safe then DeleteMacro(index) end
+        end
+    end
+end
+
 local function UpgradeOwnedMacros(upgrades)
     local base = Constants.MacroConsts.MAX_ACCOUNT_MACROS
     local _, count = GetNumMacros()
@@ -231,6 +259,7 @@ local function Synchronize()
     RenameOwnedMacros()
     local upgrades, rankless = SpellUpgrades()
     UpgradeOwnedMacros(upgrades)
+    RestoreHelpfulMacros(upgrades)
     ConsolidateOwnedMacros()
     addon.UpgradeCustomMacroRanks(rankless, OwnedMacro)
     for _, slot in ipairs(ActionSlots()) do
@@ -242,6 +271,7 @@ local function Synchronize()
             kind, id = GetActionInfo(slot)
         end
         if state.enabled and kind == "spell" and C_ActionBar.IsHarmfulAction(slot, true)
+            and not C_Spell.IsSpellHelpful(id)
             and not C_Spell.IsAutoAttackSpell(id) and not C_Spell.IsAutoRepeatSpell(id) then
             local index = EnsureMacro(id)
             if index then

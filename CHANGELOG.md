@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Excluded helpful spells from attack-macro conversion and restored their unedited generated macros to spell buttons before freeing the macro slots.
+
 - Consolidated duplicate generated attack macros while preserving action-bar assignments, recovered missing generated-macro ownership, and reused identical commands across ranks and normalized line endings before allocating slots.
 
 - Hid the player name while retaining XP text in its row.
