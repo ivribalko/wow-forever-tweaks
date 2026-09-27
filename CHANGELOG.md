@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Removed combat-panel button sizing, positioning, frame-level changes, background highlighting, and action-button click hooks; retained secure panel routing and compact visibility.
+
 - Changed level-badge XP to a hollow gold and blue progress ring inset beneath the outer rim.
 
 - Used the native standalone circular mask to clip XP fills inside the level badge.
