@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Separated L2/R2 click targets to avoid overlapping trigger presses sharing button release tracking.
+
 - Removed combat-panel button sizing, positioning, frame-level changes, background highlighting, and action-button click hooks; retained secure panel routing and compact visibility.
 
 - Changed level-badge XP to a hollow gold and blue progress ring inset beneath the outer rim.
@@ -28,7 +30,7 @@
 - Moved combat visibility handling to explicitly protected child frames so native bar refreshes retain the selected panel.
 - Added bounded source/alpha controller-panel diagnostics for native refreshes, secure trigger state, and visibility before/after corrections.
 - Reapplied compact-panel visibility after native refreshes in combat without changing spell-button functions or styles.
-- Forced both trigger states released when either side of L2+R2 is released, preventing a retained R2 panel.
+- Preserved the remaining held trigger when releasing one side of L2+R2, so releasing R2 leaves L2 active.
 - Removed calls to native active-panel styling methods after they tainted button functions called before `UseAction`; compact scaling and background highlighting use separate geometry/texture updates.
 - Refreshed controller panels after native form-bar updates outside combat, using the active native stance override.
 - Swapped the default and held-R2 controller panels during combat using secure click bindings; in-game validation is pending.

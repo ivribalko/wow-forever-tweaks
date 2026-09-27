@@ -42,18 +42,13 @@ local REFRESH = [[
     self:SetAttribute("refreshing", nil)
 ]]
 
+-- Each trigger has a separate click target so overlapping presses do not
+-- share a button's press/release tracking.
 local CLICK = [[
-    if not self:GetAttribute("enabled") then return end
-    if button ~= "left" and button ~= "right" then return end
-    if not down and self:GetAttribute("left") and self:GetAttribute("right") then
-        -- Releasing either side of L2+R2 releases the whole combination,
-        -- even if the other trigger's release never reaches this handler.
-        self:SetAttribute("left", nil)
-        self:SetAttribute("right", nil)
-    else
-        self:SetAttribute(button, down or nil)
-    end
-    self:RunAttribute("refresh")
+    local owner = self:GetFrameRef("owner")
+    if not owner:GetAttribute("enabled") then return end
+    owner:SetAttribute(self:GetAttribute("trigger"), down or nil)
+    owner:RunAttribute("refresh")
 ]]
 
 local RESET = [[
@@ -61,8 +56,8 @@ local RESET = [[
     self:SetAttribute("left", nil)
     self:SetAttribute("right", nil)
     if self:GetAttribute("enabled") then
-        self:SetBindingClick(true, "PADLTRIGGER", self:GetName(), "left")
-        self:SetBindingClick(true, "PADRTRIGGER", self:GetName(), "right")
+        self:SetBindingClick(true, "PADLTRIGGER", self:GetFrameRef("trigger-left"):GetName(), "LeftButton")
+        self:SetBindingClick(true, "PADRTRIGGER", self:GetFrameRef("trigger-right"):GetName(), "LeftButton")
         self:RunAttribute("refresh")
     end
 ]]
@@ -142,14 +137,22 @@ local function Install()
     if not page or not page.actionBars.stanceBar then return end
     latch = CreateFrame("Button", "ForeverTweaksCombatPanels", UIParent,
         "SecureHandlerClickTemplate,SecureHandlerStateTemplate")
-    latch:RegisterForClicks("AnyDown", "AnyUp")
     latch:EnableMouse(false)
     latch:SetAttribute("keys", 0)
     latch:SetAttribute("refresh", REFRESH)
     latch:SetAttribute("reset", RESET)
     latch:SetAttribute("resume", RESUME)
     latch:SetAttribute("override-count", 0)
-    latch:SetAttribute("_onclick", CLICK)
+    for _, side in ipairs({ "left", "right" }) do
+        local trigger = CreateFrame("Button", "ForeverTweaksCombatTrigger_" .. side, UIParent,
+            "SecureHandlerClickTemplate")
+        trigger:RegisterForClicks("AnyDown", "AnyUp")
+        trigger:EnableMouse(false)
+        trigger:SetFrameRef("owner", latch)
+        trigger:SetAttribute("trigger", side)
+        trigger:SetAttribute("_onclick", CLICK)
+        latch:SetFrameRef("trigger-" .. side, trigger)
+    end
     for i, name in ipairs(names) do
         local bar = page.actionBars[name]
         latch:SetFrameRef("bar-" .. i, bar)
