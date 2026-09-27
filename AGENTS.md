@@ -19,7 +19,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Restores up to 120 recent messages per permanent chat tab and reopens regular and Battle.net friend whisper tabs after UI reload.
 - Sets chat messages to begin fading after 30 seconds, with native gamepad focus keeping messages visible.
 - Smoothly fades player and target frames, cast bars, and gamepad action bars between 40% opacity outside combat and 70% in combat.
-- Shows XP progress as a gold percentage beside the player name and hides the original XP artwork.
+- Hides the player name and shows XP progress and available rested XP as gold percentages in its row, such as `50% (+30%)`, and hides the original XP artwork.
 - Shows maximum HP beside the level in friendly and hostile unit tooltips.
 - Binds controller inputs for the world map and inventory; PlayStation touchpad sides require the local mapping described below.
 - Swaps the main and R2 controller panels during combat with momentary triggers; releasing either trigger after L2+R2 clears both held states.
@@ -69,7 +69,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Player and target frames, the player cast bar, and the gamepad action bars are 40% visible outside combat and 70% visible in combat.
 - Combat opacity transitions use a shared 0.45-second cosine ease.
 - Friendly and hostile unit tooltips append maximum health to the native level line, such as `Level 10 - 100 HP`, including controller soft targets. Health is passed directly to Blizzard's text formatter, which supports secret values; frame status-text settings are not changed.
-- XP progress appears as a gold percentage beside the player name, following UITweaks. The original XP artwork is hidden; other status bars remain available. The percentage hides when XP is disabled, at the level cap, or while the player frame shows a vehicle.
+- The player name is hidden. XP progress appears as gold text in its row, following UITweaks, with available rested XP appended as `50% (+30%)`. The XP text uses automatic width to keep the rested suffix visible. Both percentages use the XP required for the current level and round down; the rested suffix is omitted when no rested XP is available. The original XP artwork is hidden; other status bars remain available. The percentage hides when XP is disabled, at the level cap, or while the player frame shows a vehicle.
 - The floating Issue Reporter panel is hidden.
 - The automatic quest-reward feedback survey ("Did you experience any issues?") is hidden without submitting a report.
 - In source and alpha packages, protected-action failures are captured in `ForeverTweaksDiagnostics` SavedVariables, with up to 20 records of addon attribution, action, UI state, and call stack. Reload after reproducing a failure to persist the capture in the client's WTF directory; keep these files outside the repository.

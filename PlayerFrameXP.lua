@@ -1,20 +1,24 @@
--- Display XP beside the player name, following UITweaks' compact percentage style.
+-- Display XP in the player name row, following UITweaks' compact percentage style.
 local xpText
-local originalNameWidth
 local hookedContainers = setmetatable({}, { __mode = "k" })
 
 local function UpdatePlayerXP()
     if not xpText then
         return
     end
+    PlayerName:SetAlpha(0)
     local maximum = UnitXPMax("player")
     if PlayerFrame.unit ~= "player" or not GameRulesUtil.CanShowExperienceBar() or maximum <= 0 then
         xpText:Hide()
-        PlayerName:SetWidth(originalNameWidth)
         return
     end
-    PlayerName:SetWidth(math.max(originalNameWidth - 34, 20))
-    xpText:SetFormattedText("%d%%", math.floor(UnitXP("player") / maximum * 100))
+    local percentage = math.floor(UnitXP("player") / maximum * 100)
+    local rested = GetXPExhaustion()
+    if rested and rested > 0 then
+        xpText:SetFormattedText("%d%% (+%d%%)", percentage, math.floor(rested / maximum * 100))
+    else
+        xpText:SetFormattedText("%d%%", percentage)
+    end
     xpText:Show()
 end
 
@@ -42,11 +46,12 @@ local function InitializePlayerXP()
         local content = PlayerFrame.PlayerFrameContent
         local main = content and content.PlayerFrameContentMain
         if main then
-            originalNameWidth = PlayerName:GetWidth()
             xpText = main:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall", 1)
-            xpText:SetSize(30, 12)
+            -- A single anchor and automatic width keep the rested suffix untruncated.
+            xpText:SetHeight(12)
+            xpText:SetWordWrap(false)
             -- Forever's level badge is below the portrait, separate from the name row.
-            xpText:SetPoint("RIGHT", PlayerName, "LEFT", originalNameWidth, 0)
+            xpText:SetPoint("RIGHT", PlayerName, "RIGHT", 0, 0)
             xpText:SetJustifyH("RIGHT")
             xpText:SetTextColor(1, 0.82, 0)
             for _, name in ipairs({ "PlayerFrame_UpdateRolesAssigned", "PlayerFrame_ToPlayerArt", "PlayerFrame_ToVehicleArt" }) do
@@ -73,6 +78,7 @@ events:RegisterEvent("PLAYER_LOGIN")
 events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:RegisterEvent("PLAYER_XP_UPDATE")
+events:RegisterEvent("UPDATE_EXHAUSTION")
 events:RegisterEvent("PLAYER_LEVEL_CHANGED")
 events:RegisterEvent("PLAYER_MAX_LEVEL_UPDATE")
 events:RegisterEvent("ENABLE_XP_GAIN")

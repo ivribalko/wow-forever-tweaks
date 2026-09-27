@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Hid the player name while retaining XP text in its row.
+
+- Added available rested XP to the player XP text as `50% (+30%)`, with automatic text width to prevent ellipsis.
+
 - Restored open regular and Battle.net friend whisper tabs across UI reloads, excluding closed tabs and clearing history on fresh login.
 
 - Added an Instance chat tab with party, raid, and instance messages, including leaders and raid warnings, creating it only when missing.
