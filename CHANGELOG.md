@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Removed maximum HP from unit tooltips.
+
 - Isolated the leave-group helper prompt from native legend tables and removed writes to native targeting state to address controller interact-target taint.
 
 - Added L1+R1+X leave-group confirmation and a matching entry in the top-left controller shortcuts helper.

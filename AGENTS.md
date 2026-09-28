@@ -21,7 +21,6 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Sets chat messages to begin fading after 30 seconds, with native gamepad focus keeping messages visible.
 - Smoothly fades player and target frames, cast bars, and gamepad action bars between 40% opacity outside combat and 70% in combat.
 - Shows earned XP as a hollow gold progress ring starting at the top and rested XP as a blue arc just inside the player level indicator’s outer rim, preserving the native level number and name line and hiding the original XP artwork.
-- Shows maximum HP beside the level in friendly and hostile unit tooltips.
 - Swaps the main and R2 controller panels during combat with momentary triggers, leaving button appearance and click handlers under native control; separate trigger input handlers preserve the other held trigger on release and return to the default panel when both are released.
 - Makes the player turn with the gamepad camera while moving, including autorun.
 - Disables native gamepad touchpad cursor control for use with an external mouse mapper.
@@ -69,7 +68,6 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Gamepad camera turning follows movement, including autorun, both in and out of combat. The addon manages `GamePadTurnWithCamera`: `2` (Always) while moving and `0` (While moving) when stopped, restored to `0` at logout or reload. The native dropdown reflects the temporary value; other dropdown choices are overridden while the addon is enabled. In-game autorun validation is pending.
 - Player and target frames, the player cast bar, and the gamepad action bars are 40% visible outside combat and 70% visible in combat.
 - Combat opacity transitions use a shared 0.45-second cosine ease.
-- Friendly and hostile unit tooltips append maximum health to the native level line, such as `Level 10 - 100 HP`, including controller soft targets. Health is passed directly to Blizzard's text formatter, which supports secret values; frame status-text settings are not changed.
 - A hollow progress ring sits just inside the player level indicator’s outer rim, leaving the center unfilled. It progresses clockwise from the top with earned XP in gold and available rested XP continuing in blue. Both use the current level’s XP requirement; the combined fill is capped at one full circle. The native level number, badge rim, and name line remain visible. The original XP artwork is hidden; other status bars remain available. The fill hides when XP is disabled, at the level cap, while the player frame shows a vehicle, or when the level indicator is hidden. In-game validation is pending.
 - The floating Issue Reporter panel is hidden.
 - The automatic quest-reward feedback survey ("Did you experience any issues?") is hidden without submitting a report.

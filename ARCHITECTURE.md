@@ -20,7 +20,6 @@
 - The same login handler sets `GamePadFactionColor` to `0`.
 - The same login handler sets `GamepadDisableTooltips` to `0`, preventing native `GameTooltip_OnShow` from hiding item tooltips in focused controller menus.
 - The login handler attempts to set `GamePadOverlapMouseMs` to `0` for mapped mouse movement. This currently does not work: the effective value remains `2000` despite a successful write; the cause is unconfirmed.
-- A unit-tooltip post-call appends maximum health to friendly and hostile level lines, accepting typed level lines and localized plain-text level labels. `GetLeftLine` retrieves the native font string, and `SetFormattedText` receives `UnitHealthMax` directly without inspecting secret health values. GUID-matched mouseover and controller soft-target tokens provide a fallback when native unit resolution fails. Each rebuild starts from native text to avoid duplicate suffixes.
 - The reload button combines Blizzard’s `UI-RefreshButton` atlas with the day/night indicator’s `UI-HUD-Minimap-Frame-Cycle` rim. Normal and pressed states share the native symbol; hover highlights the circular rim.
 - `Reload.tga` supplies the manifest’s addon-list icon.
 - `Reload.png` is a PNG copy for sharing and project artwork; it is excluded from the game package.
