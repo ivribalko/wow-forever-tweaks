@@ -1,4 +1,4 @@
--- Adds leave-group confirmation to the unused bottom-face shortcuts slot.
+-- Offers target invitations or leave-group confirmation in the shortcuts slot.
 local driver = CreateFrame("Frame")
 local shortcuts, prompt
 local buttonPending = true
@@ -17,10 +17,35 @@ StaticPopupDialogs[dialog] = {
     preferredIndex = 3,
 }
 
+-- A friendly player keeps invite mode even when already grouped, so an
+-- unavailable invitation never silently becomes a leave-group action.
+local function GetShortcutAction()
+    local player = UnitIsPlayer("target")
+    local friendly = UnitIsFriend("player", "target")
+    local selfTarget = UnitIsUnit("player", "target")
+    if not issecretvalue(player) and not issecretvalue(friendly)
+        and not issecretvalue(selfTarget) and player and friendly and not selfTarget then
+        local party, raid = UnitInParty("target"), UnitInRaid("target")
+        local name = GetUnitName("target", true)
+        local available = not issecretvalue(party) and not issecretvalue(raid)
+            and not party and not raid
+            and not issecretvalue(name) and name ~= nil
+        return true, available, name
+    end
+    return false, IsInGroup()
+end
+
 local function OnLeaveClick(_, _, down)
     -- Both-shoulder mode already cancels native targeting. Do not write its
     -- wasModifierUsed field: native protected targeting code reads it later.
-    if down and IsInGroup() then StaticPopup_Show(dialog) end
+    if not down then return end
+    local invite, available, name = GetShortcutAction()
+    if not available then return end
+    if invite then
+        C_PartyInfo.InviteUnit(name)
+    else
+        StaticPopup_Show(dialog)
+    end
 end
 
 local function RefreshButton()
@@ -28,14 +53,18 @@ local function RefreshButton()
     if not shortcuts or InCombatLockdown() then return end
     local button = shortcuts.faceBottomButton
     button:SetScript("OnClick", OnLeaveClick)
-    button.SpecialActionIcon:SetTexture("Interface\\Icons\\Spell_Shadow_Teleport")
+    local invite, available = GetShortcutAction()
+    button.SpecialActionIcon:SetTexture(invite and "Interface\\Icons\\Spell_Holy_DevotionAura"
+        or "Interface\\Icons\\Spell_Shadow_Teleport")
     button.SpecialActionIcon:Show()
-    shortcuts:SetButtonEnabled(button, IsInGroup())
+    shortcuts:SetButtonEnabled(button, available)
     buttonPending = false
 end
 
 local function RefreshPrompt(entry)
-    entry:EnableOrDisablePrompt(IsInGroup())
+    local invite, available = GetShortcutAction()
+    entry:SetPromptText(invite and "Invite Target" or LEAVE_PARTY)
+    entry:EnableOrDisablePrompt(available)
 end
 
 local function Install()
@@ -81,9 +110,11 @@ driver:RegisterEvent("ADDON_LOADED")
 driver:RegisterEvent("PLAYER_ENTERING_WORLD")
 driver:RegisterEvent("PLAYER_REGEN_ENABLED")
 driver:RegisterEvent("GROUP_ROSTER_UPDATE")
+driver:RegisterEvent("PLAYER_TARGET_CHANGED")
+driver:RegisterEvent("UNIT_FACTION")
 driver:SetScript("OnEvent", function(_, event)
-    if event == "GROUP_ROSTER_UPDATE" then
-        -- Do not let an old confirmation apply to a different roster.
+    if event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_TARGET_CHANGED" or event == "UNIT_FACTION" then
+        -- Dismiss stale confirmations when the roster or selected action changes.
         StaticPopup_Hide(dialog)
         buttonPending = true
         if prompt then RefreshPrompt(prompt) end

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Changed L1+R1+X to Invite Target for a selected friendly player, with a matching helper label; retained leave-group confirmation otherwise.
+
 - Removed maximum HP from unit tooltips.
 
 - Isolated the leave-group helper prompt from native legend tables and removed writes to native targeting state to address controller interact-target taint.
