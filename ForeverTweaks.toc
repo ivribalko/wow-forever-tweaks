@@ -13,6 +13,7 @@ InstanceChat.lua
 ChatHistory.lua
 GamepadCamera.lua
 GamepadCombatPanels.lua
+GamepadLeaveGroup.lua
 QuestTracker.lua
 PlayerFrameXP.lua
 Merchant.lua
