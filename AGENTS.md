@@ -4,6 +4,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
+- Adds a small icon at the minimap’s top-right corner to toggle the native Use Compact Action Bar gamepad setting outside combat.
 - Adds L1+R1+X (bottom face button) to invite a selected friendly player or otherwise leave the current party or raid after confirmation, with a matching isolated entry in the top-left controller shortcuts helper.
 - Creates an Instance chat tab if missing and enables party, raid, and instance messages there, including leaders and raid warnings.
 - Sorts the full tracked-quest list by quest level, lowest first.
@@ -11,7 +12,6 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Shows the selected profession recipe's output tooltip with equipped-item comparisons.
 - Automatically replaces harmful, non-helpful spell actions with spell-casting macros that start autoattack in combat, reuses identical generated commands across ranks, and removes duplicate generated macros while preserving action-bar assignments. Helpful spells are excluded, and their unedited generated macros are restored to spell buttons before removal.
 - Automatically upgrades action-bar spells and makes spell references in macros rankless to use the highest learned rank.
-- Adds a small circular-arrow button at the minimap’s top-right corner to reload the interface.
 - Removes chat backgrounds and borders and shows chat tabs only on hover outside gamepad chat focus.
 - Expands chat upward with matching top and bottom screen margins during gamepad chat focus and shows native artwork and all docked tabs until focus closes.
 - Shows chat input backgrounds and channel labels while focused, with input focus borders during gamepad chat expansion.
@@ -33,6 +33,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Usage
 
+- Left-click the action-slot icon at the minimap’s top-right corner to toggle Use Compact Action Bar. Gold indicates enabled and gray indicates disabled; the tooltip shows the current setting. Toggling is unavailable during combat. The native character setting persists across reloads and remains available in Gamepad settings. In-game validation is pending.
 - Hold L1+R1 and press X (the bottom face button on PlayStation controllers) to invite the selected friendly player. The top-left helper displays Invite Target; targets already in your group are disabled. With no other friendly player selected, it displays Leave Party and opens a leave-group confirmation, disabled while solo. NPCs and self-targets use the leave action. Native invitation restrictions and confirmations apply. Native helper visibility settings still apply. Button artwork and enabled-state changes wait until combat ends; the helper and click action read the current target, and target or roster changes dismiss stale leave confirmations. In-game validation is pending.
 - At login and UI reload, the Instance tab receives party, party leader, raid, raid leader, raid warning, instance, and instance leader messages. A missing tab is created and docked with only those message groups; an existing tab keeps its other filters. Setup waits until combat ends if needed. If all chat slots are occupied, free a slot and reload. In-game validation is pending.
 - During combat, the main and R2 controller panels swap: no trigger selects the R2 panel, and holding R2 selects the main panel. Outside combat they retain native order. L2 and L2+R2 keep their normal panels; triggers are momentary. Releasing R2 from L2+R2 leaves L2 active; releasing L2 leaves R2 active, with the combat swap still applied. Releasing both returns to the combat-dependent default panel. Secure bindings and compact-panel visibility share the same selection, with native stance buttons for forms. Button sizes, positions, frame levels, highlights, animations, and prompts remain under native control and may not follow the swapped selection. The swap does not hook action-button clicks. Vehicle, possession, special pages, and targeting overrides defer to native behavior. Closing R1/L1 targeting panels restores combat-swapped bindings and visibility during combat, after all temporary override panels close. In-game validation is pending.
@@ -47,7 +48,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Supports WoW Forever beta 1.60.1 (`16001`).
 - Selecting a crafting recipe displays its result beside the profession window, with native equipped-item comparisons where available and no modifier key required. Hover tooltips take priority; the preview returns when they close and hides with the crafting page. Recrafting and inspection forms are excluded. In-game validation is pending.
 - Place the `ForeverTweaks` folder in the client’s `Interface/AddOns` directory and enable Forever Tweaks in the AddOns menu.
-- The minimap reload button uses a native refresh symbol and the same circular rim as the day/night indicator. The AddOns list uses the bundled circular-arrow artwork.
+- The minimap compact action-bar button uses an action-slot icon and the same circular rim as the day/night indicator. The AddOns list uses the bundled circular-arrow artwork.
 - Restart the game if the newly created addon is absent from the list.
 - The button has no text, configuration, or external dependencies.
 - The addon does not bind touchpad clicks to map or inventory. The [controller restore tool](tools/CONTROLLERS.md) configures device inputs separately; it does not assign in-game actions.
@@ -111,7 +112,7 @@ The project is licensed under the [MIT License](LICENSE). World of Warcraft and 
 - Keep secrets and personal configuration out of tracked files.
 - Do not build, install, or launch applications for verification unless explicitly requested.
 - Do not take screenshots without explicit approval.
-- Keep the reload button small and icon-only.
+- Keep the minimap button small and icon-only.
 - Check the WoW UI source on GitHub in the `forever` branch before implementing or debugging game UI changes.
 - If a fix fails on the first attempt, consult the relevant WoW UI source in the `forever` branch again before attempting another fix.
 - Do not read secret aura IDs or mutate Blizzard aura queues from addon hooks; use the native automatic-tooltip setting.

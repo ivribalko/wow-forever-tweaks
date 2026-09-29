@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Replaced the minimap reload button with an icon to toggle the native compact gamepad action-bar setting outside combat.
 - Changed L1+R1+X to Invite Target for a selected friendly player, with a matching helper label; retained leave-group confirmation otherwise.
 
 - Removed maximum HP from unit tooltips.
