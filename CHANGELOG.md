@@ -1,5 +1,6 @@
 # Changelog
 
+- Changed action-button cooldown timers to native single-value units instead of minutes and seconds together.
 - Positioned the reload and compact action-bar buttons side by side below the minimap.
 - Restored the minimap reload button beside the compact action-bar toggle.
 - Removed automatic repairs and junk selling at merchants.

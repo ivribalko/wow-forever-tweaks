@@ -4,6 +4,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
+- Shows action-button cooldown timers as a single value with native units instead of minutes and seconds together.
 - Adds a small reload button beside the compact action-bar toggle in a centered row below the minimap.
 - Adds a small icon below the minimap to toggle the native Use Compact Action Bar gamepad setting outside combat.
 - Adds L1+R1+X (bottom face button) to invite a selected friendly player or otherwise leave the current party or raid after confirmation, with a matching isolated entry in the top-left controller shortcuts helper.
@@ -33,6 +34,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Usage
 
+- Action-button cooldowns use native single-value time units instead of the M:SS format, including controller buttons, charge cooldowns, and loss-of-control timers. Native countdown visibility settings still apply. In-game validation is pending.
 - Left-click the circular-arrow button to the left of the compact action-bar toggle to reload the interface.
 - Left-click the action-slot icon below the minimap to toggle Use Compact Action Bar. Gold indicates enabled and gray indicates disabled; the tooltip shows the current setting. Toggling is unavailable during combat. The native character setting persists across reloads and remains available in Gamepad settings. In-game validation is pending.
 - Hold L1+R1 and press X (the bottom face button on PlayStation controllers) to invite the selected friendly player. The top-left helper displays Invite Target; targets already in your group are disabled. With no other friendly player selected, it displays Leave Party and opens a leave-group confirmation, disabled while solo. NPCs and self-targets use the leave action. Native invitation restrictions and confirmations apply. Native helper visibility settings still apply. Button artwork and enabled-state changes wait until combat ends; the helper and click action read the current target, and target or roster changes dismiss stale leave confirmations. In-game validation is pending.

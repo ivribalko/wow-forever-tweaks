@@ -1,5 +1,6 @@
 # Architecture
 
+- `ActionCooldowns.lua` sets the native countdown abbreviation threshold to zero on action-button cooldown widgets, disabling M:SS formatting. It initializes registered buttons at login and post-hooks the shared `ActionButton_ApplyCooldown` path for controller buttons and dynamically created flyouts. Normal, charge, and loss-of-control widgets retain native timing and visibility; no cooldown values are read or reformatted by addon code.
 - `ReloadButton.lua` creates a small refresh button anchored to the left of the compact action-bar toggle and reloads the interface on left-click through `C_UI.Reload`, with `ReloadUI` as a fallback. It loads after `GamepadCompactButton.lua` and uses the native minimap rim and refresh artwork.
 - `GamepadCompactButton.lua` adds a shortcut below the minimap and toggles `GamepadUseCompactActionBar` outside combat. Native CVar callbacks refresh the action-bar layout; login, CVar, and combat events refresh the icon and tooltip without changing native bar methods.
 
