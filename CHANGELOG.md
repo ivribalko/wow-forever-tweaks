@@ -1,7 +1,7 @@
 # Changelog
 
-## Unreleased
-
+- Positioned the reload and compact action-bar buttons side by side below the minimap.
+- Restored the minimap reload button beside the compact action-bar toggle.
 - Removed automatic repairs and junk selling at merchants.
 - Replaced the minimap reload button with an icon to toggle the native compact gamepad action-bar setting outside combat.
 - Changed L1+R1+X to Invite Target for a selected friendly player, with a matching helper label; retained leave-group confirmation otherwise.

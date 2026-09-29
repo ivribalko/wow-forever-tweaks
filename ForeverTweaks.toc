@@ -10,6 +10,7 @@
 
 ForeverTweaks.lua
 GamepadCompactButton.lua
+ReloadButton.lua
 InstanceChat.lua
 ChatHistory.lua
 GamepadCamera.lua

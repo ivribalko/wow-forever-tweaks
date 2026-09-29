@@ -2,7 +2,8 @@
 local cvar = "GamepadUseCompactActionBar"
 local button = CreateFrame("Button", "ForeverTweaksCompactButton", Minimap)
 button:SetSize(24, 24)
-button:SetPoint("CENTER", Minimap, "TOPRIGHT", -6, -6)
+-- Center the two-button row below the minimap, with a four-pixel gap.
+button:SetPoint("TOP", Minimap, "BOTTOM", 14, -6)
 button:SetFrameLevel(Minimap:GetFrameLevel() + 10)
 button:RegisterForClicks("LeftButtonUp")
 
