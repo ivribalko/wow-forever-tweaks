@@ -17,7 +17,6 @@ GamepadCombatPanels.lua
 GamepadLeaveGroup.lua
 QuestTracker.lua
 PlayerFrameXP.lua
-Merchant.lua
 ProfessionTooltip.lua
 MacroRanks.lua
 AttackMacros.lua
