@@ -1,5 +1,7 @@
 # Changelog
 
+- Gave the empty reserved quest slot a dimmed native quest exclamation icon, distinct from empty custom slots.
+
 - Simplified the normal quick-wheel hint to the native triangle-button icon and Edit, dimmed during combat; edit mode uses the native square-button icon and Remove.
 
 - Fixed quick-wheel combat errors from restricted spell cooldown values by using native duration objects for spell and resolved spell-macro countdowns.

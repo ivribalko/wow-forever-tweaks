@@ -453,7 +453,8 @@ RefreshSlots = function()
         local entry = GetSlotEntry(index)
         local name, icon = GetEntryInfo(entry)
         local art = button.art
-        art.SegmentIcon:SetTexture(icon or 134400)
+        local emptyIcon = index == QUEST_SLOT and "Interface/GossipFrame/AvailableQuestIcon" or 134400
+        art.SegmentIcon:SetTexture(icon or emptyIcon)
         art.SegmentIcon:SetDesaturated(not entry)
         art.SegmentIcon:SetAlpha(entry and 1 or 0.35)
         art.IconLabel:SetText(name or (index == QUEST_SLOT and "Quest item" or "Empty"))
