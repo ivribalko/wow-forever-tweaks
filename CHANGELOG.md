@@ -1,5 +1,7 @@
 # Changelog
 
+- Simplified the normal quick-wheel hint to the native triangle-button icon and Edit, dimmed during combat; edit mode uses the native square-button icon and Remove.
+
 - Fixed quick-wheel combat errors from restricted spell cooldown values by using native duration objects for spell and resolved spell-macro countdowns.
 
 - Reserved the top quick-wheel slot for the selected tracked quest’s usable item, with native quest cooldowns and seven custom slots. Item changes wait until combat ends; existing top bindings are preserved.

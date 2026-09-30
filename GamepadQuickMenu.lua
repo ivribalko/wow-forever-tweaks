@@ -377,15 +377,18 @@ local function SetAction(button, entry)
 end
 
 local function SetFooter()
+    local combat = InCombatLockdown()
+    wheel.EditHint:SetAlpha(combat and 0.4 or ((editing or pendingEntry) and 0 or 1))
+    wheel.RemoveHint:SetAlpha(not combat and editing and not pendingEntry and 1 or 0)
     if InCombatLockdown() then
-        wheel.Footer:SetText("Hold Share · Aim right stick · Release Share: use\nCircle: cancel · Editing available outside combat")
+        wheel.Footer:SetText("")
     elseif pendingEntry then
         local name = GetEntryInfo(pendingEntry) or "Selected action"
         wheel.Footer:SetText(name .. "\nHold Share · Aim right stick · Release Share: assign · Circle: back")
     elseif editing then
-        wheel.Footer:SetText("Right stick: select · Square: remove · Triangle: done\nCircle / Share: close · Drag an item, spell, or macro to add")
+        wheel.Footer:SetText("")
     else
-        wheel.Footer:SetText("Hold Share · Aim right stick · Release Share: use\nCircle: cancel · Triangle: edit")
+        wheel.Footer:SetText("")
     end
 end
 
@@ -722,6 +725,21 @@ local function Initialize()
     wheel.Footer = wheel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     wheel.Footer:SetPoint("CENTER", wheel.FooterBackground, "CENTER")
     wheel.Footer:SetSize(450, 70)
+    local editHint = CreateFrame("Frame", nil, wheel, "InputPromptOneIconWithTextTemplate")
+    editHint:SetPoint("CENTER", wheel, "BOTTOM", 0, -5)
+    editHint:SetPromptInputIconKey(1, GAMEPAD_FACE_TOP)
+    editHint:SetPromptText("Edit")
+    editHint:SetPromptFont("GameFontNormal")
+    editHint:SetInputIconSize(1, 24, 24)
+    wheel.EditHint = editHint
+    local removeHint = CreateFrame("Frame", nil, wheel, "InputPromptOneIconWithTextTemplate")
+    removeHint:SetPoint("CENTER", wheel, "BOTTOM", 0, -5)
+    removeHint:SetPromptInputIconKey(1, GAMEPAD_FACE_LEFT)
+    removeHint:SetPromptText("Remove")
+    removeHint:SetPromptFont("GameFontNormal")
+    removeHint:SetInputIconSize(1, 24, 24)
+    removeHint:SetAlpha(0)
+    wheel.RemoveHint = removeHint
 
     local anchors = { {150, 0}, {112, 112}, {0, 150}, {-112, 112},
         {-150, 0}, {-112, -112}, {0, -150}, {112, -112} }
