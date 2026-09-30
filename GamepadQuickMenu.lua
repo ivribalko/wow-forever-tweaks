@@ -7,6 +7,8 @@ local pendingEntry, bindPrompt, pickerKey
 local ApplyWheelBindings, RefreshBindPrompt
 local SHARE = "PADBACK"
 local QUEST_SLOT = 3 -- The top sector in the native radial geometry.
+local LEAVE_SLOT = 7 -- The opposite bottom sector.
+local leaveEntry = { kind = "leave-group" }
 local questEntry
 local OPEN_BINDING = "CLICK ForeverTweaksQuickMenuOpen:LeftButton"
 local RefreshBindings, RefreshSlots, SelectSlot, OpenWheel
@@ -79,6 +81,7 @@ local SELECTION_TICK = [[
 local SHARE_HOLD = [[
     local menu = control:GetFrameRef("wheel")
     self:SetAttribute("type1", nil)
+    self:SetAttribute("clickbutton", nil)
     if down then
         self:SetAttribute("hold-armed", nil)
         self:SetAttribute("bind-press", nil)
@@ -112,6 +115,7 @@ local SHARE_HOLD = [[
         self:SetAttribute("spell", slot:GetAttribute("spell"))
         self:SetAttribute("item", slot:GetAttribute("item"))
         self:SetAttribute("macro", slot:GetAttribute("macro"))
+        self:SetAttribute("clickbutton", slot:GetAttribute("clickbutton"))
         self:SetAttribute("type1", slot:GetAttribute("saved-type"))
     end
     return nil, "close"
@@ -255,6 +259,7 @@ end
 -- last configured item and its artwork together until protected edits resume.
 local function GetSlotEntry(index)
     if index == QUEST_SLOT then return questEntry end
+    if index == LEAVE_SLOT then return leaveEntry end
     return ForeverTweaksQuickMenu[index]
 end
 
@@ -270,23 +275,27 @@ local function RefreshQuestEntry()
     if itemID then questEntry = { kind = "item", id = itemID, questID = questID, icon = icon } end
 end
 
--- Relocate the old top binding when space permits, otherwise retain it in
--- SavedVariables until another custom slot becomes available.
-local function PreserveTopBinding()
-    local entry = ForeverTweaksQuickMenu[QUEST_SLOT]
-    if not entry then return end
-    for index = 1, 8 do
-        if index ~= QUEST_SLOT and not ForeverTweaksQuickMenu[index] then
-            ForeverTweaksQuickMenu[index] = entry
-            ForeverTweaksQuickMenu[QUEST_SLOT] = nil
-            return
+-- Retain displaced reserved-slot bindings until a custom destination is free.
+local function PreserveReservedBindings()
+    for _, reserved in ipairs({ QUEST_SLOT, LEAVE_SLOT }) do
+        local entry = ForeverTweaksQuickMenu[reserved]
+        if entry then
+            for index = 1, 8 do
+                if index ~= QUEST_SLOT and index ~= LEAVE_SLOT and not ForeverTweaksQuickMenu[index] then
+                    ForeverTweaksQuickMenu[index] = entry
+                    ForeverTweaksQuickMenu[reserved] = nil
+                    break
+                end
+            end
         end
     end
 end
 
 local function GetEntryInfo(entry)
     if not entry then return end
-    if entry.kind == "spell" then
+    if entry.kind == "leave-group" then
+        return PARTY_LEAVE or "Leave Party", "Interface/Icons/Spell_Shadow_Teleport"
+    elseif entry.kind == "spell" then
         local info = C_Spell.GetSpellInfo(entry.id)
         if info then return info.name, info.iconID end
     elseif entry.kind == "macro" then
@@ -353,9 +362,15 @@ local function SetAction(button, entry)
     button:SetAttribute("spell", nil)
     button:SetAttribute("item", nil)
     button:SetAttribute("macro", nil)
+    button:SetAttribute("clickbutton", nil)
     button:SetAttribute("saved-type", nil)
     if not entry then return end
-    if entry.kind == "spell" then
+    if entry.kind == "leave-group" then
+        if IsInGroup() then
+            button:SetAttribute("clickbutton", ForeverTweaksLeaveGroupRequest)
+            button:SetAttribute("type1", "click")
+        end
+    elseif entry.kind == "spell" then
         -- Rankless spell names follow the highest learned rank.
         local name = GetEntryInfo(entry)
         if name then
@@ -404,7 +419,10 @@ end
 local function ShowTooltip(button)
     local entry = GetSlotEntry(button:GetID())
     GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
-    if entry and entry.kind == "spell" then
+    if entry and entry.kind == "leave-group" then
+        GameTooltip:SetText(PARTY_LEAVE or "Leave Party")
+        GameTooltip:AddLine(IsInGroup() and "Opens a leave-group confirmation." or "Unavailable while solo.", 1, 1, 1, true)
+    elseif entry and entry.kind == "spell" then
         GameTooltip:SetSpellByID(entry.id)
     elseif entry and entry.kind == "item" then
         GameTooltip:SetItemByID(entry.id)
@@ -422,7 +440,7 @@ end
 
 RefreshSlots = function()
     if not wheel or InCombatLockdown() then return end
-    PreserveTopBinding()
+    PreserveReservedBindings()
     RefreshQuestEntry()
     for index, button in ipairs(slots) do
         local entry = GetSlotEntry(index)
@@ -430,10 +448,11 @@ RefreshSlots = function()
         local art = button.art
         local emptyIcon = index == QUEST_SLOT and "Interface/GossipFrame/AvailableQuestIcon" or 134400
         art.SegmentIcon:SetTexture(icon or emptyIcon)
-        art.SegmentIcon:SetDesaturated(not entry)
-        art.SegmentIcon:SetAlpha(entry and 1 or 0.35)
+        local unavailable = not entry or (index == LEAVE_SLOT and not IsInGroup())
+        art.SegmentIcon:SetDesaturated(unavailable)
+        art.SegmentIcon:SetAlpha(unavailable and 0.35 or 1)
         art.IconLabel:SetText(name or (index == QUEST_SLOT and "Quest item" or "Empty"))
-        art.SegmentDisabled:SetShown(not entry)
+        art.SegmentDisabled:SetShown(unavailable)
         button:SetAttribute("bindingPicker", bindingPicker)
         SetAction(button, entry)
     end
@@ -496,7 +515,7 @@ end
 
 local function AssignPending(index)
     if not index or not pendingEntry or InCombatLockdown() then return end
-    if index == QUEST_SLOT then
+    if index == QUEST_SLOT or index == LEAVE_SLOT then
         return
     end
     local entry = GetNativeBindEntry()
@@ -789,7 +808,7 @@ local function Initialize()
     remover:SetScript("OnClick", function()
         if InCombatLockdown() or pendingEntry or not wheel:IsShown() then return end
         local index = owner:GetAttribute("selected-slot")
-        if not index or index == QUEST_SLOT then return end
+        if not index or index == QUEST_SLOT or index == LEAVE_SLOT then return end
         opener:SetAttribute("hold-armed", nil)
         ForeverTweaksQuickMenu[index] = nil
         RefreshSlots()
@@ -866,6 +885,7 @@ driver:RegisterEvent("PLAYER_REGEN_DISABLED")
 driver:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 driver:RegisterEvent("SPELLS_CHANGED")
 driver:RegisterEvent("UPDATE_MACROS")
+driver:RegisterEvent("GROUP_ROSTER_UPDATE")
 driver:RegisterEvent("SUPER_TRACKING_CHANGED")
 driver:RegisterEvent("QUEST_LOG_UPDATE")
 driver:RegisterEvent("QUEST_WATCH_LIST_CHANGED")

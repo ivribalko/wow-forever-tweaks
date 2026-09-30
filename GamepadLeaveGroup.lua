@@ -1,4 +1,4 @@
--- Offers target invitations or leave-group confirmation in the shortcuts slot.
+-- Offers target invitations in shortcuts and native leave confirmation for the wheel.
 local driver = CreateFrame("Frame")
 local shortcuts, prompt, promptAnchor
 local buttonPending = true
@@ -12,9 +12,8 @@ local function HideConfirmation()
     if data then securecallfunction(StaticPopup_Hide, "GENERIC_CONFIRMATION", data) end
 end
 
--- A friendly player keeps invite mode even when already grouped, so an
--- unavailable invitation never silently becomes a leave-group action.
-local function GetShortcutAction()
+-- The shortcut only invites friendly players outside the current group.
+local function GetInviteTarget()
     local player = UnitIsPlayer("target")
     local friendly = UnitIsFriend("player", "target")
     local selfTarget = UnitIsUnit("player", "target")
@@ -25,13 +24,13 @@ local function GetShortcutAction()
         local available = not issecretvalue(party) and not issecretvalue(raid)
             and not party and not raid
             and not issecretvalue(name) and name ~= nil
-        return true, available, name
+        return available, name
     end
-    return false, IsInGroup()
+    return false
 end
 
 local function ShowConfirmation()
-    if confirmationData then return end
+    if confirmationData or not IsInGroup() then return end
     local data = {
         text = "Leave your current group?",
         acceptText = YES,
@@ -40,8 +39,7 @@ local function ShowConfirmation()
     data.callback = function()
         if confirmationData ~= data then return end
         confirmationData = nil
-        local invite, available = GetShortcutAction()
-        if not invite and available then C_PartyInfo.LeaveParty() end
+        if IsInGroup() then C_PartyInfo.LeaveParty() end
     end
     data.cancelCallback = function()
         if confirmationData == data then confirmationData = nil end
@@ -52,35 +50,36 @@ local function ShowConfirmation()
     securecallfunction(StaticPopup_ShowCustomGenericConfirmation, data)
 end
 
-local function OnLeaveClick(_, _, down)
+-- Secure wheel slots click this addon-owned button; confirmation stays native.
+local leaveRequest = CreateFrame("Button", "ForeverTweaksLeaveGroupRequest", UIParent)
+leaveRequest:EnableMouse(false)
+leaveRequest:RegisterForClicks("AnyUp")
+leaveRequest:SetScript("OnClick", ShowConfirmation)
+
+local function OnInviteClick(_, _, down)
     -- Both-shoulder mode already cancels native targeting. Do not write its
     -- wasModifierUsed field: native protected targeting code reads it later.
     if not down then return end
-    local invite, available, name = GetShortcutAction()
+    local available, name = GetInviteTarget()
     if not available then return end
-    if invite then
-        C_PartyInfo.InviteUnit(name)
-    else
-        ShowConfirmation()
-    end
+    C_PartyInfo.InviteUnit(name)
 end
 
 local function RefreshButton()
     buttonPending = true
     if not shortcuts or InCombatLockdown() then return end
     local button = shortcuts.faceBottomButton
-    button:SetScript("OnClick", OnLeaveClick)
-    local invite, available = GetShortcutAction()
-    button.SpecialActionIcon:SetTexture(invite and "Interface\\Icons\\Spell_Holy_DevotionAura"
-        or "Interface\\Icons\\Spell_Shadow_Teleport")
+    button:SetScript("OnClick", OnInviteClick)
+    local available = GetInviteTarget()
+    button.SpecialActionIcon:SetTexture("Interface\\Icons\\Spell_Holy_DevotionAura")
     button.SpecialActionIcon:Show()
     shortcuts:SetButtonEnabled(button, available)
     buttonPending = false
 end
 
 local function RefreshPrompt(entry)
-    local invite, available = GetShortcutAction()
-    entry:SetPromptText(invite and "Invite Target" or (PARTY_LEAVE or "Leave Party"))
+    local available = GetInviteTarget()
+    entry:SetPromptText("Invite Target")
     entry:EnableOrDisablePrompt(available)
 end
 
@@ -107,7 +106,7 @@ local function Install()
         if bagsEntry then
             prompt = CreateFrame("Frame", nil, legend, "InputPromptOneIconWithTextTemplate")
             prompt:SetPromptInputIconKey(1, GAMEPAD_FACE_BOTTOM)
-            prompt:SetPromptText(PARTY_LEAVE or "Leave Party")
+            prompt:SetPromptText("Invite Target")
             prompt:SetPromptFont("GameFontNormal")
             prompt:SetInputIconSize(1, 18, 18)
             prompt:SetPoint("TOPLEFT", bagsEntry, "TOPLEFT", 0, -24)
@@ -119,7 +118,7 @@ local function Install()
     -- Native setup can reset or swap the bottom-face button. Observe its
     -- handler after native updates, without hooking an inherited method.
     if shortcuts and (buttonPending
-        or shortcuts.faceBottomButton:GetScript("OnClick") ~= OnLeaveClick) then
+        or shortcuts.faceBottomButton:GetScript("OnClick") ~= OnInviteClick) then
         RefreshButton()
     end
     if prompt and promptAnchor then
