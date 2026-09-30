@@ -564,7 +564,7 @@ RefreshBindPrompt = function(entry)
         bindPrompt:SetWidth(label:GetStringWidth() + 29)
         bindPrompt:Hide()
     end
-    local visible = entry ~= nil and not wheel:IsShown() and footer:IsVisible()
+    local visible = entry ~= nil and footer:IsVisible()
     -- Derive native bounds from its own prompts, rather than the dimensions
     -- extended on the previous tick. Native refreshes may relayout at any time.
     local last, right, bottom = nil, 10, 34
