@@ -1,9 +1,9 @@
 -- Provides a character-specific item/spell wheel at the unused Share fallback.
 local driver = CreateFrame("Frame")
-local owner, wheel, opener, cancel, editor
-local slots, selected, editing, initialized = {}, nil, false, false
+local owner, wheel, opener, cancel, remover
+local slots, selected, bindingPicker, initialized = {}, nil, false, false
 local fallbackBound, listening = false, false
-local pendingEntry, bindPrompt, bindLegend, editKey
+local pendingEntry, bindPrompt, bindLegend, pickerKey
 local ApplyWheelBindings, RefreshBindPrompt
 local SHARE = "PADBACK"
 local QUEST_SLOT = 3 -- The top sector in the native radial geometry.
@@ -41,8 +41,8 @@ local COMBAT_STATE = [[
     local menu = self:GetFrameRef("wheel")
     self:ClearBindings()
     if newstate == "combat" then
-        if menu:GetAttribute("editing") then menu:Hide() end
-        menu:SetAttribute("editing", nil)
+        if menu:GetAttribute("bindingPicker") then menu:Hide() end
+        menu:SetAttribute("bindingPicker", nil)
         for i = 1, 8 do
             local slot = self:GetFrameRef("slot-" .. i)
             slot:SetAttribute("type1", slot:GetAttribute("saved-type"))
@@ -56,7 +56,7 @@ local COMBAT_STATE = [[
 -- Keep the highlight and release action on this same retained selection.
 local SAMPLE_SELECTION = [[
     local menu = self:GetFrameRef("wheel")
-    if not menu:IsShown() or menu:GetAttribute("editing") then return end
+    if not menu:IsShown() or menu:GetAttribute("bindingPicker") then return end
     local state = GetGamePadState()
     local stick = state and state.sticks[self:GetAttribute("camera-stick")]
     if stick and stick.x * stick.x + stick.y * stick.y > 0.25 then
@@ -75,7 +75,7 @@ local SELECTION_TICK = [[
     self:SetAttribute("state-selection", nil)
 ]]
 -- Both Share edges use the same secure action button. Only its real release
--- can activate; cancellation or entering edit mode disarms it.
+-- can activate; cancellation or opening the binding picker disarms it.
 local SHARE_HOLD = [[
     local menu = control:GetFrameRef("wheel")
     self:SetAttribute("type1", nil)
@@ -103,7 +103,8 @@ local SHARE_HOLD = [[
     end
     local armed = self:GetAttribute("hold-armed")
     self:SetAttribute("hold-armed", nil)
-    if not armed or not menu:IsShown() or menu:GetAttribute("editing") then return nil, false end
+    if not menu:IsShown() or menu:GetAttribute("bindingPicker") then return nil, false end
+    if not armed then return nil, "close" end
     control:RunAttribute("sample-selection")
     local index = control:GetAttribute("selected-slot")
     if index and index >= 1 and index <= 8 then
@@ -377,20 +378,17 @@ local function SetAction(button, entry)
         button:SetAttribute("type1", "item")
     end
     button:SetAttribute("saved-type", button:GetAttribute("type1"))
-    if editing then button:SetAttribute("type1", nil) end
+    if bindingPicker then button:SetAttribute("type1", nil) end
 end
 
 local function SetFooter()
     local combat = InCombatLockdown()
-    wheel.EditHint:SetAlpha(combat and 0.4 or ((editing or pendingEntry) and 0 or 1))
-    wheel.RemoveHint:SetAlpha(not combat and editing and not pendingEntry and 1 or 0)
+    wheel.RemoveHint:SetAlpha(pendingEntry and 0 or (combat and 0.4 or 1))
     if InCombatLockdown() then
         wheel.Footer:SetText("")
     elseif pendingEntry then
         local name = GetEntryInfo(pendingEntry) or "Selected action"
         wheel.Footer:SetText(name .. "\nHold Share · Aim right stick · Release Share: assign · Circle: back")
-    elseif editing then
-        wheel.Footer:SetText("")
     else
         wheel.Footer:SetText("")
     end
@@ -423,30 +421,8 @@ local function ShowTooltip(button)
     end
     if button:GetID() == QUEST_SLOT then
         GameTooltip:AddLine("Reserved for the active tracked quest item. Updates outside combat.", 1, 1, 1, true)
-    elseif editing then
-        GameTooltip:AddLine("Drop an item, spell, or macro here. Right-click to remove.", 1, 1, 1, true)
     end
     GameTooltip:Show()
-end
-
-local function ReceiveEntry(button)
-    if InCombatLockdown() then return false end
-    if button:GetID() == QUEST_SLOT then
-        Notice("The top slot is reserved for the active quest item.")
-        return false
-    end
-    local kind, id, _, spellID = GetCursorInfo()
-    if not kind then return false end
-    if kind == "spell" then id = spellID end
-    if (kind ~= "spell" and kind ~= "item" and kind ~= "macro") or type(id) ~= "number" then
-        Notice("Drag an item, ability, or macro onto a slot.")
-        return false
-    end
-    if kind == "spell" and not C_Spell.GetSpellInfo(id) then return false end
-    ForeverTweaksQuickMenu[button:GetID()] = kind == "macro" and MacroEntry(id) or { kind = kind, id = id }
-    ClearCursor()
-    RefreshSlots()
-    return true
 end
 
 RefreshSlots = function()
@@ -463,7 +439,7 @@ RefreshSlots = function()
         art.SegmentIcon:SetAlpha(entry and 1 or 0.35)
         art.IconLabel:SetText(name or (index == QUEST_SLOT and "Quest item" or "Empty"))
         art.SegmentDisabled:SetShown(not entry)
-        button:SetAttribute("editing", editing)
+        button:SetAttribute("bindingPicker", bindingPicker)
         SetAction(button, entry)
     end
     SelectSlot(selected)
@@ -482,7 +458,7 @@ RefreshBindings = function()
     if wheel:IsShown() and pendingEntry
         and (not entry or entry.kind ~= pendingEntry.kind or entry.id ~= pendingEntry.id) then
         wheel:Hide()
-    elseif wheel:IsShown() and not editing and not WorldIsClear() then
+    elseif wheel:IsShown() and not bindingPicker and not WorldIsClear() then
         wheel:Hide()
     end
     RefreshBindPrompt(entry)
@@ -501,35 +477,26 @@ end
 
 ApplyWheelBindings = function()
     if InCombatLockdown() then return end
-    wheel:SetAttribute("editing", editing)
+    wheel:SetAttribute("bindingPicker", bindingPicker)
     ClearOverrideBindings(wheel)
     SetOverrideBindingClick(wheel, true, "ESCAPE", cancel:GetName(), "LeftButton")
-    -- The edit wheel consumes gamepad input above Blizzard's raw binding
+    -- The binding picker consumes gamepad input above Blizzard's raw binding
     -- listener. Its X/Square presses must never also rebind an action-bar slot.
-    wheel:EnableGamePadButton(editing)
+    wheel:EnableGamePadButton(bindingPicker)
     -- Preserve the opener's release route during a native Bind-menu hold.
-    -- Raw edit input was enabled after Share down and may miss its release.
-    if not editing or pendingEntry then
-        SetOverrideBindingClick(wheel, true, SHARE, opener:GetName(), "LeftButton")
-    end
-    if not editing then
+    -- Raw picker input was enabled after Share down and may miss its release.
+    SetOverrideBindingClick(wheel, true, SHARE, opener:GetName(), "LeftButton")
+    if not bindingPicker then
         for _, key in ipairs({ "PAD2" }) do
             SetOverrideBindingClick(wheel, true, key, cancel:GetName(), "LeftButton")
         end
-        SetOverrideBindingClick(wheel, true, "PAD4", editor:GetName(), "LeftButton")
-        for _, key in ipairs({ "PAD1", "PAD3", "PADDUP", "PADDRIGHT", "PADDDOWN", "PADDLEFT",
+        SetOverrideBindingClick(wheel, true, "PAD3", remover:GetName(), "LeftButton")
+        for _, key in ipairs({ "PAD1", "PAD4", "PADDUP", "PADDRIGHT", "PADDDOWN", "PADDLEFT",
             "PADLSHOULDER", "PADRSHOULDER", "PADLTRIGGER", "PADRTRIGGER", "PADRSTICK" }) do
             SetOverrideBindingClick(wheel, true, key, "ForeverTweaksQuickMenuBlock", "LeftButton")
         end
     end
     SetStickListening(true)
-end
-
-local function BeginEditing()
-    if InCombatLockdown() then return end
-    editing = true
-    ApplyWheelBindings()
-    RefreshSlots()
 end
 
 local function AssignPending(index)
@@ -555,21 +522,21 @@ local function FinishBinding()
     if wheel:IsShown() then wheel:Hide() end
 end
 
-OpenWheel = function(editMode, entry)
+OpenWheel = function(entry)
     if not initialized then return end
     if InCombatLockdown() then
-        Notice("Use Share to open the quick menu in combat; editing is available outside combat.")
+        Notice("Use Share to open the quick menu in combat; assignment is available outside combat.")
         return
     end
     if wheel:IsShown() then
-        if editMode then BeginEditing() else wheel:Hide() end
+        wheel:Hide()
         return
     end
-    if not editMode and not WorldIsClear() then return end
-    editing = editMode or false
+    if not entry and not WorldIsClear() then return end
+    bindingPicker = entry ~= nil
     pendingEntry = entry
     -- Stay above the native bind listener while choosing a destination.
-    wheel:SetFrameStrata(editing and "FULLSCREEN_DIALOG" or "DIALOG")
+    wheel:SetFrameStrata(bindingPicker and "FULLSCREEN_DIALOG" or "DIALOG")
     ClearFallback()
     SelectSlot(nil)
     RefreshSlots()
@@ -711,7 +678,7 @@ local function Initialize()
     ]])
     -- Keep this transient wheel out of UISpecialFrames/UIPanelWindows.
     -- Fullscreen menu managers discover those registries and replace geometry;
-    -- the wheel instead owns its temporary Escape binding, including edit mode.
+    -- the wheel instead owns its temporary Escape binding, including the binding picker.
 
     -- Match GamepadRadial.xml's native wheel, header, footer, and eight anchors.
     Texture(wheel, "Background", "gamepad-radial-menu-wheelbg", "OVERLAY", -3):SetPoint("CENTER", 0, 10)
@@ -730,13 +697,6 @@ local function Initialize()
     wheel.Footer = wheel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     wheel.Footer:SetPoint("CENTER", wheel.FooterBackground, "CENTER")
     wheel.Footer:SetSize(450, 70)
-    local editHint = CreateFrame("Frame", nil, wheel, "InputPromptOneIconWithTextTemplate")
-    editHint:SetPoint("CENTER", wheel, "BOTTOM", 0, -5)
-    editHint:SetPromptInputIconKey(1, GAMEPAD_FACE_TOP)
-    editHint:SetPromptText("Edit")
-    editHint:SetPromptFont("GameFontNormal")
-    editHint:SetInputIconSize(1, 24, 24)
-    wheel.EditHint = editHint
     local removeHint = CreateFrame("Frame", nil, wheel, "InputPromptOneIconWithTextTemplate")
     removeHint:SetPoint("CENTER", wheel, "BOTTOM", 0, -5)
     removeHint:SetPromptInputIconKey(1, GAMEPAD_FACE_LEFT)
@@ -781,28 +741,21 @@ local function Initialize()
         cooldown:SetCountdownAbbrevThreshold(0)
         button.cooldown = cooldown
         button:SetScript("OnEnter", function(self)
-            if editing then SelectSlot(self:GetID()) end
+            if bindingPicker then SelectSlot(self:GetID()) end
             ShowTooltip(self)
         end)
         button:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        button:SetScript("OnReceiveDrag", ReceiveEntry)
         button:SetScript("PreClick", function(self, mouseButton)
             if InCombatLockdown() then return end
-            self.receivedCursor = GetCursorInfo() ~= nil
-            if editing or self.receivedCursor or mouseButton ~= "LeftButton" then
+            if bindingPicker or mouseButton ~= "LeftButton" then
                 self:SetAttribute("type1", nil)
             end
         end)
         button:SetScript("PostClick", function(self, mouseButton)
             if InCombatLockdown() then return end
-            if mouseButton == "RightButton" and editing and self:GetID() ~= QUEST_SLOT then
-                ForeverTweaksQuickMenu[self:GetID()] = nil
-            elseif mouseButton == "LeftButton" and pendingEntry then
+            if mouseButton == "LeftButton" and pendingEntry then
                 AssignPending(self:GetID())
-            elseif mouseButton == "LeftButton" and self.receivedCursor then
-                ReceiveEntry(self)
             end
-            self.receivedCursor = nil
             RefreshSlots()
         end)
         slots[index] = button
@@ -816,7 +769,7 @@ local function Initialize()
     owner.OpenFromShare = function()
         if InCombatLockdown() then return end
         local entry = GetNativeBindEntry()
-        OpenWheel(entry ~= nil, entry)
+        OpenWheel(entry)
     end
     SecureHandlerWrapScript(opener, "OnClick", owner, SHARE_HOLD, [[
         if message == "open" then
@@ -837,60 +790,57 @@ local function Initialize()
             return false
         end
     ]])
-    editor = CreateFrame("Button", "ForeverTweaksQuickMenuEdit", wheel)
-    editor:RegisterForClicks("AnyUp")
-    editor:SetScript("OnClick", BeginEditing)
+    remover = CreateFrame("Button", "ForeverTweaksQuickMenuRemove", wheel)
+    remover:RegisterForClicks("AnyUp")
+    remover:SetScript("OnClick", function()
+        if InCombatLockdown() or pendingEntry or not wheel:IsShown() then return end
+        local index = owner:GetAttribute("selected-slot")
+        if not index or index == QUEST_SLOT then return end
+        opener:SetAttribute("hold-armed", nil)
+        ForeverTweaksQuickMenu[index] = nil
+        RefreshSlots()
+    end)
     local blocker = CreateFrame("Button", "ForeverTweaksQuickMenuBlock", wheel)
     blocker:RegisterForClicks("AnyDown", "AnyUp")
     wheel:SetScript("OnGamepadStick", function(_, stick, x, y)
         if stick ~= "Camera" or not wheel:IsShown() then return true end
-        if editing and x * x + y * y > 0.25 then
+        if bindingPicker and x * x + y * y > 0.25 then
             local angle = math.deg(math.atan2(y, x))
             SelectSlot(math.floor((angle + 22.5) / 45) % 8 + 1)
         end
         -- Normal selection is painted by the secure sampler in both modes.
-        -- Raw stick callbacks only select editing slots and consume camera input.
+        -- Raw stick callbacks only select picker slots and consume camera input.
         return false
     end)
     wheel:SetScript("OnGamePadButtonDown", function(_, key)
-        if not editing or not wheel:IsShown() then return true end
+        if not bindingPicker or not wheel:IsShown() then return true end
         if key == SHARE and pendingEntry then return true end
-        editKey = key
+        pickerKey = key
         return false
     end)
     wheel:SetScript("OnGamePadButtonUp", function(_, key)
-        if not editing or not wheel:IsShown() then return true end
+        if not bindingPicker or not wheel:IsShown() then return true end
         if InCombatLockdown() then return false end
         -- Let the preserved click binding complete the original Share hold.
         if key == SHARE and pendingEntry then return true end
-        if editKey ~= key then return false end
-        editKey = nil
+        if pickerKey ~= key then return false end
+        pickerKey = nil
         -- Finish on release so returning to native bindings cannot replay the
         -- release into a newly restored action or reopen the wheel.
-        if key == "PAD3" and selected and selected ~= QUEST_SLOT and not pendingEntry then
-            ForeverTweaksQuickMenu[selected] = nil
-            RefreshSlots()
-        elseif key == "PAD2" or key == SHARE then
-            wheel:Hide()
-        elseif key == "PAD4" and not pendingEntry and WorldIsClear() then
-            editing = false
-            wheel:SetFrameStrata("DIALOG")
-            ApplyWheelBindings()
-            RefreshSlots()
-        end
+        if key == "PAD2" then wheel:Hide() end
         return false
     end)
     wheel:HookScript("OnShow", function()
-        if InCombatLockdown() then editing = false; listening = true end
+        if InCombatLockdown() then bindingPicker = false; listening = true end
         SetFooter()
         RefreshCooldowns()
     end)
     wheel:HookScript("OnHide", function()
         SetStickListening(false)
         GameTooltip:Hide()
-        pendingEntry, editKey = nil, nil
+        pendingEntry, pickerKey = nil, nil
         listening = false
-        if InCombatLockdown() then editing = false end
+        if InCombatLockdown() then bindingPicker = false end
         if not InCombatLockdown() then
             ClearOverrideBindings(wheel)
             wheel:EnableGamePadButton(false)
@@ -919,9 +869,8 @@ SlashCmdList.FOREVERTWEAKSQUICKMENU = function(message)
     Initialize()
     if not initialized then Notice("The quick menu is not ready. Try again outside combat."); return end
     local command = strtrim(message):lower()
-    if command == "edit" then OpenWheel(true)
-    elseif command == "" then OpenWheel(false)
-    else Notice("/ftquick opens the wheel; /ftquick edit lets you drop items, spells, or macros and right-click to remove them.") end
+    if command == "" then OpenWheel()
+    else Notice("/ftquick opens the wheel. Use native Bind to assign entries; Square removes the highlighted entry outside combat.") end
 end
 
 driver:RegisterEvent("PLAYER_LOGIN")

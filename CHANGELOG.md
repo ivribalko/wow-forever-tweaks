@@ -1,5 +1,7 @@
 # Changelog
 
+- Moved Square removal into the normal quick wheel and removed standalone edit mode; native Bind remains the assignment path.
+
 - Fixed native confirmation dialogs stretching toward the screen bottom by excluding quick-wheel visibility blockers from native layout sizing.
 
 - Gave the empty reserved quest slot a dimmed native quest exclamation icon, distinct from empty custom slots.
