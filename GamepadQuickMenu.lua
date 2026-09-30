@@ -46,7 +46,32 @@ local function WorldIsClear()
         and not InCinematic() and not IsInCinematicScene()
 end
 
--- Read the selection already prepared by Blizzard's item/spell Bind action.
+-- Macro indices shift when other macros are removed. Preserve scope and
+-- identity instead of silently executing whatever occupies a saved index.
+local function MacroEntry(index)
+    local name, _, body = GetMacroInfo(index)
+    if not name then return end
+    return { kind = "macro", id = index, name = name, body = body,
+        character = index > Constants.MacroConsts.MAX_ACCOUNT_MACROS }
+end
+
+local function ResolveMacro(entry)
+    local accountCount, characterCount = GetNumMacros()
+    local base = entry.character and Constants.MacroConsts.MAX_ACCOUNT_MACROS or 0
+    local count = entry.character and characterCount or accountCount
+    local candidate, matches = nil, 0
+    for index = base + 1, base + count do
+        local name, _, body = GetMacroInfo(index)
+        if name == entry.name then
+            if body == entry.body then return index end
+            candidate, matches = index, matches + 1
+        end
+    end
+    -- A uniquely named macro can be edited without losing the wheel binding.
+    if matches == 1 then return candidate end
+end
+
+-- Read the selection already prepared by Blizzard's item/spell/macro Bind action.
 -- Moving an existing bar action is deliberately excluded: that mode owns an
 -- emptied source slot and must finish through Blizzard's move/undo workflow.
 local function GetNativeBindEntry()
@@ -57,7 +82,9 @@ local function GetNativeBindEntry()
         or (GamepadRadial and GamepadRadial:IsShown()) then return end
     local params = source.pickupParams
     local kind, id
-    if source.pickupFunc == C_Item.PickupItem and source.displayedActionType == "ITEM" then
+    if source.pickupFunc == PickupMacro and source.displayedActionType == "MACRO" then
+        return MacroEntry(params[1])
+    elseif source.pickupFunc == C_Item.PickupItem and source.displayedActionType == "ITEM" then
         kind, id = "item", params[1]
     elseif source.pickupFunc == C_Spell.PickupSpell and source.displayedActionType == "SPELL" then
         kind, id = "spell", params[1]
@@ -74,6 +101,10 @@ local function GetEntryInfo(entry)
     if entry.kind == "spell" then
         local info = C_Spell.GetSpellInfo(entry.id)
         if info then return info.name, info.iconID end
+    elseif entry.kind == "macro" then
+        local index = ResolveMacro(entry)
+        if index then return GetMacroInfo(index) end
+        return (entry.name or "Macro") .. " (unavailable)", 134400
     elseif entry.kind == "item" then
         return C_Item.GetItemNameByID(entry.id) or "Item " .. entry.id,
             C_Item.GetItemIconByID(entry.id)
@@ -84,6 +115,7 @@ local function SetAction(button, entry)
     button:SetAttribute("type1", nil)
     button:SetAttribute("spell", nil)
     button:SetAttribute("item", nil)
+    button:SetAttribute("macro", nil)
     if not entry or editing then return end
     if entry.kind == "spell" then
         -- Rankless spell names follow the highest learned rank.
@@ -91,6 +123,12 @@ local function SetAction(button, entry)
         if name then
             button:SetAttribute("spell", name)
             button:SetAttribute("type1", "spell")
+        end
+    elseif entry.kind == "macro" then
+        local index = ResolveMacro(entry)
+        if index then
+            button:SetAttribute("macro", index)
+            button:SetAttribute("type1", "macro")
         end
     elseif entry.kind == "item" then
         button:SetAttribute("item", "item:" .. entry.id)
@@ -103,7 +141,7 @@ local function SetFooter()
         local name = GetEntryInfo(pendingEntry) or "Selected action"
         wheel.Footer:SetText(name .. "\nRight stick: select · X: assign · Square: remove · Circle: back")
     elseif editing then
-        wheel.Footer:SetText("Right stick: select · Square: remove · Triangle: done\nCircle / Share: close · Drag an item or spell to add")
+        wheel.Footer:SetText("Right stick: select · Square: remove · Triangle: done\nCircle / Share: close · Drag an item, spell, or macro to add")
     else
         wheel.Footer:SetText("Right stick: select · X: use · Circle / Share: close\nTriangle: edit · Add through the native Bind menu → Share")
     end
@@ -130,11 +168,14 @@ local function ShowTooltip(button)
         GameTooltip:SetSpellByID(entry.id)
     elseif entry and entry.kind == "item" then
         GameTooltip:SetItemByID(entry.id)
+    elseif entry and entry.kind == "macro" then
+        local name = GetEntryInfo(entry)
+        GameTooltip:SetText(name)
     else
         GameTooltip:SetText("Empty slot")
     end
     if editing then
-        GameTooltip:AddLine("Drop an item or spell here. Right-click to remove.", 1, 1, 1, true)
+        GameTooltip:AddLine("Drop an item, spell, or macro here. Right-click to remove.", 1, 1, 1, true)
     end
     GameTooltip:Show()
 end
@@ -144,12 +185,12 @@ local function ReceiveEntry(button)
     local kind, id, _, spellID = GetCursorInfo()
     if not kind then return false end
     if kind == "spell" then id = spellID end
-    if (kind ~= "spell" and kind ~= "item") or type(id) ~= "number" then
-        Notice("Drag an item from your bags or an ability from your spellbook.")
+    if (kind ~= "spell" and kind ~= "item" and kind ~= "macro") or type(id) ~= "number" then
+        Notice("Drag an item, ability, or macro onto a slot.")
         return false
     end
     if kind == "spell" and not C_Spell.GetSpellInfo(id) then return false end
-    ForeverTweaksQuickMenu[button:GetID()] = { kind = kind, id = id }
+    ForeverTweaksQuickMenu[button:GetID()] = kind == "macro" and MacroEntry(id) or { kind = kind, id = id }
     ClearCursor()
     RefreshSlots()
     return true
@@ -235,7 +276,7 @@ local function AssignPending(index)
         wheel:Hide()
         return
     end
-    ForeverTweaksQuickMenu[index] = { kind = entry.kind, id = entry.id }
+    ForeverTweaksQuickMenu[index] = entry
     Notice((GetEntryInfo(entry) or "Action") .. " assigned to quick-menu slot " .. index .. ".")
     wheel:Hide()
 end
@@ -310,7 +351,7 @@ local function Initialize()
     if type(ForeverTweaksQuickMenu) ~= "table" then ForeverTweaksQuickMenu = {} end
     for index = 1, 8 do
         local entry = ForeverTweaksQuickMenu[index]
-        if type(entry) ~= "table" or (entry.kind ~= "item" and entry.kind ~= "spell")
+        if type(entry) ~= "table" or (entry.kind ~= "item" and entry.kind ~= "spell" and entry.kind ~= "macro")
             or type(entry.id) ~= "number" or entry.id <= 0 or entry.id % 1 ~= 0 then
             ForeverTweaksQuickMenu[index] = nil
         end
@@ -484,7 +525,7 @@ SlashCmdList.FOREVERTWEAKSQUICKMENU = function(message)
     local command = strtrim(message):lower()
     if command == "edit" then OpenWheel(true)
     elseif command == "" then OpenWheel(false)
-    else Notice("/ftquick opens the wheel; /ftquick edit lets you drop items or spells and right-click to remove them.") end
+    else Notice("/ftquick opens the wheel; /ftquick edit lets you drop items, spells, or macros and right-click to remove them.") end
 end
 
 driver:RegisterEvent("PLAYER_LOGIN")
@@ -492,6 +533,7 @@ driver:RegisterEvent("ADDON_LOADED")
 driver:RegisterEvent("PLAYER_REGEN_ENABLED")
 driver:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 driver:RegisterEvent("SPELLS_CHANGED")
+driver:RegisterEvent("UPDATE_MACROS")
 driver:SetScript("OnEvent", function(_, event)
     if event == "PLAYER_LOGIN" or event == "PLAYER_REGEN_ENABLED" or IsLoggedIn() then Initialize() end
     if initialized then RefreshSlots(); RefreshBindings() end

@@ -1,5 +1,7 @@
 # Changelog
 
+- Added Share-to-wheel binding for native macros, with macro icons, secure activation, and saved identity resolution after macro index changes.
+
 - Added a Share quick-wheel destination to the native item/spell Bind menu, with right-stick slot selection, X assignment, Square removal, and controller editing from the wheel.
 
 - Excluded the quick wheel from fullscreen-menu discovery by replacing its special-frame registration with temporary Escape bindings in normal and edit modes.
