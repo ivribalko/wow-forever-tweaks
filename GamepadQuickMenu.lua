@@ -331,10 +331,11 @@ local function RefreshCooldowns()
                 cooldown:Clear()
             end
         elseif spell then
-            local info = C_Spell.GetSpellCooldown(spell)
-            if info then
-                -- Pass values directly; cooldown times may be restricted.
-                cooldown:SetCooldown(info.startTime, info.duration, info.modRate)
+            local duration = C_Spell.GetSpellCooldownDuration(spell)
+            if duration then
+                -- Keep restricted timing inside the native duration object;
+                -- SetCooldown rejects raw secret numbers from addon code.
+                cooldown:SetCooldownFromDurationObject(duration, true)
             else
                 cooldown:Clear()
             end

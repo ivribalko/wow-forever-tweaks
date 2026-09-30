@@ -1,5 +1,7 @@
 # Changelog
 
+- Fixed quick-wheel combat errors from restricted spell cooldown values by using native duration objects for spell and resolved spell-macro countdowns.
+
 - Reserved the top quick-wheel slot for the selected tracked quest’s usable item, with native quest cooldowns and seven custom slots. Item changes wait until combat ends; existing top bindings are preserved.
 
 - Preserved the Share click binding throughout slot assignment so releasing the opening hold assigns and closes the picker.
