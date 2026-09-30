@@ -136,6 +136,9 @@ local function DiscoverCombatBlockers()
         end
     end
     local function Watch(panel)
+        -- The manager's collapsed tab remains shown in a party/raid. Only
+        -- its expanded controls should block the wheel during combat.
+        if panel and panel == CompactRaidFrameManager then panel = panel.displayFrame end
         local chat = panel and chatOwners[panel]
         if chat then panel = chat.footer end
         if not panel or panel == wheel or panel == owner or combatBlockers[panel]
@@ -158,7 +161,7 @@ local function DiscoverCombatBlockers()
     local manager = GamepadMode and GamepadMode.FrameControlsManager
     for _, panel in ipairs(manager and manager.shownFrames or {}) do Watch(panel) end
     for _, name in ipairs({ "GamepadRadial", "GamepadHudMode", "GamepadActionBarEditFrame",
-        "GameMenuFrame", "StaticPopup1", "StaticPopup2", "StaticPopup3", "StaticPopup4",
+        "GameMenuFrame", "CompactRaidFrameManager", "StaticPopup1", "StaticPopup2", "StaticPopup3", "StaticPopup4",
         "CinematicFrame", "MovieFrame" }) do Watch(_G[name]) end
     for _, name in ipairs(CHAT_FRAMES or {}) do
         local chat = _G[name]
@@ -201,8 +204,30 @@ local function WorldIsClear()
         and not (GamepadRadial and GamepadRadial:IsShown())
         and not (GamepadHudMode and GamepadHudMode:IsShown())
         and not (GameMenuFrame and GameMenuFrame:IsShown())
+        and not (CompactRaidFrameManager and CompactRaidFrameManager.displayFrame
+            and CompactRaidFrameManager.displayFrame:IsVisible())
         and not GetCurrentKeyBoardFocus()
         and not InCinematic() and not IsInCinematicScene()
+end
+
+-- Native raid controls claim Share even while collapsed and mark that group
+-- as core. Identify the actual top Share owner, since native function bindings
+-- share the same CLICK button name across different interfaces.
+local function ShareFallbackAvailable(action)
+    if action == "TOGGLEUIFOCUS" or action == OPEN_BINDING then return true end
+    local raid = CompactRaidFrameManager
+    if not raid or not raid.expandFrame or not raid.collapsed then return false end
+    local manager = GamepadSharedUtility.InputBindingManager
+    local stack = manager.bindingSetStack
+    for index = #stack, 1, -1 do
+        local set = stack[index]
+        local binding = set.bindings and set.bindings[SHARE]
+        if binding then
+            return set.name == raid.expandFrame.name
+                and binding.boundFunction == CompactRaidFrameManager_Expand
+        end
+    end
+    return false
 end
 
 -- Macro indices shift when other macros are removed. Preserve scope and
@@ -478,7 +503,7 @@ RefreshBindings = function()
     RefreshBindPrompt(entry)
     local action = GetBindingAction(SHARE, true)
     local shouldBind = not wheel:IsShown() and (entry or (WorldIsClear()
-        and (action == "TOGGLEUIFOCUS" or action == OPEN_BINDING)))
+        and ShareFallbackAvailable(action)))
     if shouldBind then
         if action ~= OPEN_BINDING then
             SetOverrideBindingClick(owner, true, SHARE, opener:GetName(), "LeftButton")

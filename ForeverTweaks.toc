@@ -15,7 +15,6 @@ ReloadButton.lua
 InstanceChat.lua
 ChatHistory.lua
 GamepadCamera.lua
-GamepadCombatPanels.lua
 GamepadLeaveGroup.lua
 GamepadQuickMenu.lua
 QuestTracker.lua
