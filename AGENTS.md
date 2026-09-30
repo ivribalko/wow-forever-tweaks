@@ -125,3 +125,4 @@ The project is licensed under the [MIT License](LICENSE). World of Warcraft and 
 - Check the WoW UI source on GitHub in the `forever` branch before implementing or debugging game UI changes.
 - If a fix fails on the first attempt, consult the relevant WoW UI source in the `forever` branch again before attempting another fix.
 - Do not read secret aura IDs or mutate Blizzard aura queues from addon hooks; use the native automatic-tooltip setting.
+- Never enable client taint logging (`taintLog`) for troubleshooting; it freezes or crashes the game. Use bounded SavedVariables diagnostics instead.
