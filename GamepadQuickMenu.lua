@@ -6,6 +6,8 @@ local fallbackBound, listening = false, false
 local pendingEntry, bindPrompt, bindLegend, editKey
 local ApplyWheelBindings, RefreshBindPrompt
 local SHARE = "PADBACK"
+local QUEST_SLOT = 3 -- The top sector in the native radial geometry.
+local questEntry
 local OPEN_BINDING = "CLICK ForeverTweaksQuickMenuOpen:LeftButton"
 local RefreshBindings, RefreshSlots, SelectSlot, OpenWheel
 
@@ -249,6 +251,39 @@ local function GetNativeBindEntry()
     if type(id) == "number" and id > 0 then return { kind = kind, id = id } end
 end
 
+-- The active tracker quest owns the reserved top slot; combat keeps the
+-- last configured item and its artwork together until protected edits resume.
+local function GetSlotEntry(index)
+    if index == QUEST_SLOT then return questEntry end
+    return ForeverTweaksQuickMenu[index]
+end
+
+local function RefreshQuestEntry()
+    questEntry = nil
+    local questID = C_SuperTrack.GetSuperTrackedQuestID()
+    if not questID or questID == 0 or C_QuestLog.GetQuestWatchType(questID) == nil then return end
+    local logIndex = C_QuestLog.GetLogIndexForQuestID(questID)
+    if not logIndex or logIndex == 0 then return end
+    local link, icon, _, showWhenComplete = GetQuestLogSpecialItemInfo(logIndex)
+    if not link or not icon or (C_QuestLog.IsComplete(questID) and not showWhenComplete) then return end
+    local itemID = tonumber(link:match("item:(%d+)"))
+    if itemID then questEntry = { kind = "item", id = itemID, questID = questID, icon = icon } end
+end
+
+-- Relocate the old top binding when space permits, otherwise retain it in
+-- SavedVariables until another custom slot becomes available.
+local function PreserveTopBinding()
+    local entry = ForeverTweaksQuickMenu[QUEST_SLOT]
+    if not entry then return end
+    for index = 1, 8 do
+        if index ~= QUEST_SLOT and not ForeverTweaksQuickMenu[index] then
+            ForeverTweaksQuickMenu[index] = entry
+            ForeverTweaksQuickMenu[QUEST_SLOT] = nil
+            return
+        end
+    end
+end
+
 local function GetEntryInfo(entry)
     if not entry then return end
     if entry.kind == "spell" then
@@ -260,7 +295,7 @@ local function GetEntryInfo(entry)
         return (entry.name or "Macro") .. " (unavailable)", 134400
     elseif entry.kind == "item" then
         return C_Item.GetItemNameByID(entry.id) or "Item " .. entry.id,
-            C_Item.GetItemIconByID(entry.id)
+            entry.icon or C_Item.GetItemIconByID(entry.id)
     end
 end
 
@@ -268,7 +303,7 @@ end
 local function RefreshCooldowns()
     if not wheel or not wheel:IsShown() then return end
     for index, button in ipairs(slots) do
-        local entry = ForeverTweaksQuickMenu[index]
+        local entry = GetSlotEntry(index)
         local spell, item
         if entry then
             if entry.kind == "spell" then
@@ -287,7 +322,15 @@ local function RefreshCooldowns()
             end
         end
         local cooldown = button.cooldown
-        if spell then
+        if entry and entry.questID then
+            local logIndex = C_QuestLog.GetLogIndexForQuestID(entry.questID)
+            if logIndex and logIndex > 0 then
+                local start, duration = GetQuestLogSpecialItemCooldown(logIndex)
+                if start then cooldown:SetCooldown(start, duration) else cooldown:Clear() end
+            else
+                cooldown:Clear()
+            end
+        elseif spell then
             local info = C_Spell.GetSpellCooldown(spell)
             if info then
                 -- Pass values directly; cooldown times may be restricted.
@@ -353,12 +396,12 @@ SelectSlot = function(index)
         wheel.SegmentHighlight:ClearAllPoints()
         wheel.SegmentHighlight:SetPoint("CENTER", wheel.Background, "CENTER", x, y)
         wheel.SegmentHighlight:SetRotation(angle)
-        wheel.SegmentHighlight:SetDesaturated(not ForeverTweaksQuickMenu[index])
+        wheel.SegmentHighlight:SetDesaturated(not GetSlotEntry(index))
     end
 end
 
 local function ShowTooltip(button)
-    local entry = ForeverTweaksQuickMenu[button:GetID()]
+    local entry = GetSlotEntry(button:GetID())
     GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
     if entry and entry.kind == "spell" then
         GameTooltip:SetSpellByID(entry.id)
@@ -368,9 +411,11 @@ local function ShowTooltip(button)
         local name = GetEntryInfo(entry)
         GameTooltip:SetText(name)
     else
-        GameTooltip:SetText("Empty slot")
+        GameTooltip:SetText(button:GetID() == QUEST_SLOT and "Quest item" or "Empty slot")
     end
-    if editing then
+    if button:GetID() == QUEST_SLOT then
+        GameTooltip:AddLine("Reserved for the active tracked quest item. Updates outside combat.", 1, 1, 1, true)
+    elseif editing then
         GameTooltip:AddLine("Drop an item, spell, or macro here. Right-click to remove.", 1, 1, 1, true)
     end
     GameTooltip:Show()
@@ -378,6 +423,10 @@ end
 
 local function ReceiveEntry(button)
     if InCombatLockdown() then return false end
+    if button:GetID() == QUEST_SLOT then
+        Notice("The top slot is reserved for the active quest item.")
+        return false
+    end
     local kind, id, _, spellID = GetCursorInfo()
     if not kind then return false end
     if kind == "spell" then id = spellID end
@@ -394,14 +443,16 @@ end
 
 RefreshSlots = function()
     if not wheel or InCombatLockdown() then return end
+    PreserveTopBinding()
+    RefreshQuestEntry()
     for index, button in ipairs(slots) do
-        local entry = ForeverTweaksQuickMenu[index]
+        local entry = GetSlotEntry(index)
         local name, icon = GetEntryInfo(entry)
         local art = button.art
         art.SegmentIcon:SetTexture(icon or 134400)
         art.SegmentIcon:SetDesaturated(not entry)
         art.SegmentIcon:SetAlpha(entry and 1 or 0.35)
-        art.IconLabel:SetText(name or "Empty")
+        art.IconLabel:SetText(name or (index == QUEST_SLOT and "Quest item" or "Empty"))
         art.SegmentDisabled:SetShown(not entry)
         button:SetAttribute("editing", editing)
         SetAction(button, entry)
@@ -474,6 +525,10 @@ end
 
 local function AssignPending(index)
     if not index or not pendingEntry or InCombatLockdown() then return end
+    if index == QUEST_SLOT then
+        Notice("The top slot is reserved for the active quest item.")
+        return
+    end
     local entry = GetNativeBindEntry()
     if not entry or entry.kind ~= pendingEntry.kind or entry.id ~= pendingEntry.id then
         wheel:Hide()
@@ -716,7 +771,7 @@ local function Initialize()
         end)
         button:SetScript("PostClick", function(self, mouseButton)
             if InCombatLockdown() then return end
-            if mouseButton == "RightButton" and editing then
+            if mouseButton == "RightButton" and editing and self:GetID() ~= QUEST_SLOT then
                 ForeverTweaksQuickMenu[self:GetID()] = nil
             elseif mouseButton == "LeftButton" and pendingEntry then
                 AssignPending(self:GetID())
@@ -788,7 +843,7 @@ local function Initialize()
         editKey = nil
         -- Finish on release so returning to native bindings cannot replay the
         -- release into a newly restored action or reopen the wheel.
-        if key == "PAD3" and selected and not pendingEntry then
+        if key == "PAD3" and selected and selected ~= QUEST_SLOT and not pendingEntry then
             ForeverTweaksQuickMenu[selected] = nil
             RefreshSlots()
         elseif key == "PAD2" or key == SHARE then
@@ -852,6 +907,9 @@ driver:RegisterEvent("PLAYER_REGEN_DISABLED")
 driver:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 driver:RegisterEvent("SPELLS_CHANGED")
 driver:RegisterEvent("UPDATE_MACROS")
+driver:RegisterEvent("SUPER_TRACKING_CHANGED")
+driver:RegisterEvent("QUEST_LOG_UPDATE")
+driver:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
 driver:SetScript("OnEvent", function(_, event)
     if event == "PLAYER_LOGIN" or event == "PLAYER_REGEN_ENABLED" or IsLoggedIn() then Initialize() end
     if initialized then RefreshSlots(); RefreshBindings(); SetFooter() end
