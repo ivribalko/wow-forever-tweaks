@@ -50,6 +50,28 @@ local COMBAT_STATE = [[
         menu:Hide()
     end
 ]]
+-- The native state-driver tick samples input securely in and out of combat.
+-- Keep the highlight and release action on this same retained selection.
+local SAMPLE_SELECTION = [[
+    local menu = self:GetFrameRef("wheel")
+    if not menu:IsShown() or menu:GetAttribute("editing") then return end
+    local state = GetGamePadState()
+    local stick = state and state.sticks[self:GetAttribute("camera-stick")]
+    if stick and stick.x * stick.x + stick.y * stick.y > 0.25 then
+        local index = math.floor((math.deg(math.atan2(stick.y, stick.x)) + 22.5) / 45) % 8 + 1
+        if index ~= self:GetAttribute("selected-slot") then
+            self:SetAttribute("selected-slot", index)
+            self:CallMethod("PaintSelection", index)
+        end
+    end
+]]
+local SELECTION_TICK = [[
+    if newstate ~= "sample" then return end
+    self:RunAttribute("sample-selection")
+    -- The native driver compares its result with the current attribute on
+    -- each tick. Clearing it schedules another sample without recursion.
+    self:SetAttribute("state-selection", nil)
+]]
 -- Both Share edges use the same secure action button. Only its real release
 -- can activate; cancellation or entering edit mode disarms it.
 local SHARE_HOLD = [[
@@ -80,12 +102,8 @@ local SHARE_HOLD = [[
     local armed = self:GetAttribute("hold-armed")
     self:SetAttribute("hold-armed", nil)
     if not armed or not menu:IsShown() or menu:GetAttribute("editing") then return nil, false end
-    local state = GetGamePadState()
-    local stick = state and state.sticks[control:GetAttribute("camera-stick")]
-    local index = menu:GetID()
-    if stick and stick.x * stick.x + stick.y * stick.y > 0.25 then
-        index = math.floor((math.deg(math.atan2(stick.y, stick.x)) + 22.5) / 45) % 8 + 1
-    end
+    control:RunAttribute("sample-selection")
+    local index = control:GetAttribute("selected-slot")
     if index and index >= 1 and index <= 8 then
         local slot = control:GetFrameRef("slot-" .. index)
         self:SetAttribute("spell", slot:GetAttribute("spell"))
@@ -289,9 +307,6 @@ end
 
 SelectSlot = function(index)
     selected = index
-    -- Frame IDs carry the visual selection without changing protected action
-    -- attributes during stick input; Share release reads it before activation.
-    wheel:SetID(index or 0)
     wheel.SegmentHighlight:SetShown(index ~= nil)
     if index then
         local angle, x, y = slots[index].art:GetSegmentRotationAndOffset()
@@ -550,10 +565,17 @@ local function Initialize()
     owner:SetFrameRef("wheel", wheel)
     owner:SetAttribute("blocker-count", 0)
     owner:SetAttribute("camera-stick", 2)
+    owner.PaintSelection = function(_, index) SelectSlot(index) end
+    owner:SetAttribute("sample-selection", SAMPLE_SELECTION)
+    owner:SetAttribute("_onstate-selection", SELECTION_TICK)
     owner:SetAttribute("combat-refresh", COMBAT_REFRESH)
     owner:SetAttribute("_onstate-combat", COMBAT_STATE)
     wheel:SetFrameRef("owner", owner)
     wheel:SetAttribute("_onshow", [[
+        local owner = self:GetFrameRef("owner")
+        owner:SetAttribute("selected-slot", nil)
+        owner:CallMethod("PaintSelection")
+        owner:RunAttribute("sample-selection")
         if self:GetFrameRef("owner"):GetAttribute("state-combat") == "combat" then
             self:EnableGamePadButton(false)
             self:EnableGamePadStick(true)
@@ -563,6 +585,7 @@ local function Initialize()
     wheel:SetAttribute("_onhide", [[
         local opener = self:GetFrameRef("owner"):GetFrameRef("opener")
         if opener then opener:SetAttribute("hold-armed", nil) end
+        self:GetFrameRef("owner"):SetAttribute("selected-slot", nil)
         self:ClearBindings()
         self:EnableGamePadButton(false)
         self:EnableGamePadStick(false)
@@ -614,7 +637,7 @@ local function Initialize()
         button:SetPoint("CENTER", wheel, "CENTER", anchor[1] + iconX, anchor[2] + iconY + 10)
         button.art = art
         button:SetScript("OnEnter", function(self)
-            SelectSlot(self:GetID())
+            if editing then SelectSlot(self:GetID()) end
             ShowTooltip(self)
         end)
         button:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -674,12 +697,12 @@ local function Initialize()
     blocker:RegisterForClicks("AnyDown", "AnyUp")
     wheel:SetScript("OnGamepadStick", function(_, stick, x, y)
         if stick ~= "Camera" or not wheel:IsShown() then return true end
-        if x * x + y * y > 0.25 then
+        if editing and x * x + y * y > 0.25 then
             local angle = math.deg(math.atan2(y, x))
             SelectSlot(math.floor((angle + 22.5) / 45) % 8 + 1)
         end
-        -- Stick callbacks can paint selection, but cannot activate protected
-        -- items/spells/macros, even outside combat. Share release activates.
+        -- Normal selection is painted by the secure sampler in both modes.
+        -- Raw stick callbacks only select editing slots and consume camera input.
         return false
     end)
     wheel:SetScript("OnGamePadButtonDown", function(_, key)
@@ -709,7 +732,7 @@ local function Initialize()
         return false
     end)
     wheel:HookScript("OnShow", function()
-        if InCombatLockdown() then editing = false; listening = true; SelectSlot(nil) end
+        if InCombatLockdown() then editing = false; listening = true end
         SetFooter()
     end)
     wheel:HookScript("OnHide", function()
@@ -737,6 +760,7 @@ local function Initialize()
     RefreshSlots()
     DiscoverCombatBlockers()
     RegisterStateDriver(owner, "combat", "[combat] combat; peace")
+    RegisterStateDriver(owner, "selection", "sample")
     RefreshBindings()
 end
 
