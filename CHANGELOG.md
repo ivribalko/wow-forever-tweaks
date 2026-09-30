@@ -1,5 +1,13 @@
 # Changelog
 
+- Excluded the quick wheel from fullscreen-menu discovery by replacing its special-frame registration with temporary Escape bindings in normal and edit modes.
+
+- Positioned the quick wheel on the left as a mirror of the native right-hand radial menu.
+
+- Fixed quick-wheel initialization by anchoring secure buttons to the wheel frame and preventing callbacks or repeated construction after incomplete setup.
+
+- Added a customizable eight-slot item and ability wheel using native gamepad menu artwork, opened by unused Share input outside combat, with per-character saved entries and drag-and-drop editing.
+
 - Changed action-button cooldown timers to native single-value units instead of minutes and seconds together.
 - Positioned the reload and compact action-bar buttons side by side below the minimap.
 - Restored the minimap reload button beside the compact action-bar toggle.

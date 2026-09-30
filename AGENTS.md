@@ -4,6 +4,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
+- Adds an eight-slot item and ability quick wheel on the left, mirroring the native right-hand menu’s position and using its radial artwork, without FullscreenMenus centering or backdrop. Share opens it outside combat only when its native UI-focus action has no interface to focus; entries can be added or removed in edit mode and are saved per character.
+
 - Shows action-button cooldown timers as a single value with native units instead of minutes and seconds together.
 - Adds a small reload button beside the compact action-bar toggle in a centered row below the minimap.
 - Adds a small icon below the minimap to toggle the native Use Compact Action Bar gamepad setting outside combat.
@@ -33,6 +35,9 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Captures protected-action failures, controller-panel state, and rejected quest ordering in source and alpha packages for troubleshooting.
 
 ## Usage
+
+- Press Share/Create with no focusable interface open to show the quick wheel outside combat. Existing Share actions, including profession Search and UI focus, retain priority. Use the right stick to select a slot and X (the bottom face button) to activate it; Circle, Share, or Escape closes the wheel. Options opens the native main menu. The quick wheel closes on entering combat or opening a native interface.
+- Use `/ftquick edit` to display the wheel alongside your bags or spellbook. Drag an item or ability onto one of its eight slots, and right-click a slot to remove it. Triangle enters this mouse editing mode from the wheel; Escape closes it. Editing never activates entries. `/ftquick` opens the normal wheel when no native interface needs focus. Slots persist per character, and spells use their highest learned rank by name. The wheel stays outside fullscreen-menu discovery and handles Escape through its own temporary binding. It sits 312 UI units left of screen center, mirroring the native right-hand wheel, and uses the native menu artwork, segment layout, and labels; item/spell activation requires X instead of recentering the stick. In-game validation is pending.
 
 - Action-button cooldowns use native single-value time units instead of the M:SS format, including controller buttons, charge cooldowns, and loss-of-control timers. Native countdown visibility settings still apply. In-game validation is pending.
 - Left-click the circular-arrow button to the left of the compact action-bar toggle to reload the interface.
