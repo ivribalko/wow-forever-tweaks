@@ -52,3 +52,13 @@ The controller restore tool also maps raw Share/Create input 4 to `PADBACK` on b
 - Controller-panel diagnostics sample native state without hooking page-unit selection or visibility methods. Native form and slot events queue stance refreshes without hooking the stance update method.
 
 - Protected-action captures record insecure native field names and addon ownership along the Bind/interact path inside alpha-only diagnostics. They do not replace native methods or enable client taint logging.
+
+## Bind-menu taint diagnosis
+
+Opening native item Bind produced `ADDON_ACTION_FORBIDDEN` for `SetPreferredGamepadInteractTarget()`. The captured native path was `BindItem` → `EnterBindingMode` → `SetOverrideAllowLeftRightModifiers` → `AssumeCoreBindingsAreUsable` → `UpdateActionBarFocusedState` → `UpdateInteractIcons`. The failure occurred outside combat on the first open, before opening the wheel picker.
+
+Disabling `GamepadQuickMenu.lua` removed the error. Removing native layout hooks and moving or replacing the hint did not resolve it. Re-enabling the wheel after replacing its protected visibility-proxy children on native panels resolved the Bind error in game.
+
+`DiscoverCombatBlockers` uses `SecureHandlerWrapScript` on each observed panel’s `OnShow` and `OnHide`. These wrappers update `blocker-N` flags on the addon-owned secure owner and run `combat-refresh`; that snippet reads the flags to close the wheel and release Share when native interfaces take priority. Initial visibility and newly available panels are discovered outside combat. No protected proxy children are attached to those panels.
+
+The Quick Menu hint remains an unprotected visual-only child inside the native bottom panel. Its presence is distinct from the removed protected visibility proxies. The exact internal client taint propagation was not established; the isolation and successful replacement identify the problematic quick-wheel integration. This finding does not establish that every protected child elsewhere in the addon causes the same failure.

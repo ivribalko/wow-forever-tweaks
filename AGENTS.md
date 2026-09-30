@@ -94,6 +94,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Quest reward feedback is registered in `Blizzard_Reports.lua` and displayed by `PopFrameAttachedSurvey` in `Blizzard_PTRFeedback.lua`. Its separate frame is stored in `PTR_IssueReporter.Data.FrameAttachedSurveyFrames[QuestFrame]`.
 - Search for the visible behavior, frame, event, or setting, then trace its callers and load order before choosing a hook. Automatic popups can use a different frame from `GameTooltip`.
 
+The native Bind-menu interact-target taint was resolved in game by replacing the quick wheel’s protected visibility-proxy children on native panels with secure show/hide wrappers and addon-owned blocker flags. Hint relocation and layout-hook removal alone did not resolve it. See [the Bind-menu taint diagnosis](ARCHITECTURE.md#bind-menu-taint-diagnosis) for the captured call path and isolation evidence. The unprotected visual hint remains inside the native bottom panel.
+
 ## Releases
 
 [`.pkgmeta`](.pkgmeta) configures CurseForge packaging as one `ForeverTweaks` folder. The manifest uses `@project-version@` for tag-based versions, and [CHANGELOG.md](CHANGELOG.md) supplies release notes. Repository documentation, tooling, and local captures are excluded.

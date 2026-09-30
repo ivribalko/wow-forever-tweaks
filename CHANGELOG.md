@@ -1,5 +1,7 @@
 # Changelog
 
+- Documented the confirmed Bind-menu taint fix: replaced quick-wheel protected visibility children on native panels with secure wrappers updating addon-owned flags.
+
 - Fixed missing leave-party helper text by using the native PARTY_LEAVE label with a fallback.
 
 - Removed native button-setup and helper-row visibility hooks from the invite/leave-party shortcut; polling follows native button resets and helper visibility.
