@@ -1,5 +1,13 @@
 # Changelog
 
+- Added hold-Share activation: hold Share to open, aim the right stick, and release Share to activate in or out of combat; the last selected slot stays highlighted after recentering and activates on release. Removed X activation from the normal wheel; X remains available for slot assignment in edit mode.
+
+- Removed stick-recenter activation after the client rejected its protected item-use call outside combat; retained physical X confirmation.
+
+- Added right-stick recenter activation outside combat; combat activation and slot assignment retain button confirmation.
+
+- Enabled quick-wheel opening, closing, and item/spell/macro activation in combat through secure handlers; hold the right stick toward a slot while confirming. Editing remains outside combat.
+
 - Moved the Share quick-menu hint inside the native bottom button-hints panel, including its background and row layout.
 
 - Added Share-to-wheel binding for native macros, with macro icons, secure activation, and saved identity resolution after macro index changes.

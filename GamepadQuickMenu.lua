@@ -1,6 +1,6 @@
 -- Provides a character-specific item/spell wheel at the unused Share fallback.
 local driver = CreateFrame("Frame")
-local owner, wheel, opener, confirm, cancel, editor
+local owner, wheel, opener, cancel, editor
 local slots, selected, editing, initialized = {}, nil, false, false
 local fallbackBound, listening = false, false
 local pendingEntry, bindPrompt, bindLegend, editKey
@@ -8,6 +8,128 @@ local ApplyWheelBindings, RefreshBindPrompt
 local SHARE = "PADBACK"
 local OPEN_BINDING = "CLICK ForeverTweaksQuickMenuOpen:LeftButton"
 local RefreshBindings, RefreshSlots, SelectSlot, OpenWheel
+
+-- Secure paths own visibility, routing, and activation during combat. Lua only
+-- paints the selection; secure release samples the physical stick itself.
+local COMBAT_REFRESH = [[
+    if self:GetAttribute("state-combat") ~= "combat" or self:GetAttribute("refreshing") then return end
+    self:SetAttribute("refreshing", true)
+    local menu = self:GetFrameRef("wheel")
+    local blocked = not IsGamePadEnabled() or not self:GetAttribute("gamepad-ui")
+    for i = 1, self:GetAttribute("blocker-count") do
+        if self:GetFrameRef("blocker-" .. i):IsVisible() then blocked = true end
+    end
+    self:SetAttribute("combat-available", not blocked)
+    self:ClearBindings()
+    if blocked then
+        menu:Hide()
+    elseif menu:IsShown() then
+        menu:SetBindingClick(true, "PAD2", "ForeverTweaksQuickMenuClose", "LeftButton")
+        menu:SetBindingClick(true, "PADBACK", "ForeverTweaksQuickMenuOpen", "LeftButton")
+        menu:SetBindingClick(true, "ESCAPE", "ForeverTweaksQuickMenuClose", "LeftButton")
+        for key in string.gmatch("PAD1 PAD3 PAD4 PADDUP PADDRIGHT PADDDOWN PADDLEFT PADLSHOULDER PADRSHOULDER PADLTRIGGER PADRTRIGGER PADRSTICK", "%S+") do
+            menu:SetBindingClick(true, key, "ForeverTweaksQuickMenuBlock", "LeftButton")
+        end
+    else
+        self:SetBindingClick(true, "PADBACK", "ForeverTweaksQuickMenuOpen", "LeftButton")
+    end
+    self:SetAttribute("refreshing", nil)
+]]
+local COMBAT_STATE = [[
+    local menu = self:GetFrameRef("wheel")
+    self:ClearBindings()
+    if newstate == "combat" then
+        if menu:GetAttribute("editing") then menu:Hide() end
+        menu:SetAttribute("editing", nil)
+        for i = 1, 8 do
+            local slot = self:GetFrameRef("slot-" .. i)
+            slot:SetAttribute("type1", slot:GetAttribute("saved-type"))
+        end
+        self:RunAttribute("combat-refresh")
+    else
+        menu:Hide()
+    end
+]]
+-- Both Share edges use the same secure action button. Only its real release
+-- can activate; cancellation or entering edit mode disarms it.
+local SHARE_HOLD = [[
+    local menu = control:GetFrameRef("wheel")
+    self:SetAttribute("type1", nil)
+    if down then
+        self:SetAttribute("hold-armed", nil)
+        self:SetAttribute("bind-press", nil)
+        if control:GetAttribute("state-combat") == "combat" then
+            control:RunAttribute("combat-refresh")
+            if control:GetAttribute("combat-available") then
+                self:SetAttribute("hold-armed", true)
+                menu:Show()
+            end
+            return nil, false
+        elseif control:GetAttribute("bind-mode") then
+            self:SetAttribute("bind-press", true)
+            return nil, false
+        else
+            self:SetAttribute("hold-armed", true)
+            return nil, "open"
+        end
+    end
+    if self:GetAttribute("bind-press") then
+        self:SetAttribute("bind-press", nil)
+        return nil, "open"
+    end
+    local armed = self:GetAttribute("hold-armed")
+    self:SetAttribute("hold-armed", nil)
+    if not armed or not menu:IsShown() or menu:GetAttribute("editing") then return nil, false end
+    local state = GetGamePadState()
+    local stick = state and state.sticks[control:GetAttribute("camera-stick")]
+    local index = menu:GetID()
+    if stick and stick.x * stick.x + stick.y * stick.y > 0.25 then
+        index = math.floor((math.deg(math.atan2(stick.y, stick.x)) + 22.5) / 45) % 8 + 1
+    end
+    if index and index >= 1 and index <= 8 then
+        local slot = control:GetFrameRef("slot-" .. index)
+        self:SetAttribute("spell", slot:GetAttribute("spell"))
+        self:SetAttribute("item", slot:GetAttribute("item"))
+        self:SetAttribute("macro", slot:GetAttribute("macro"))
+        self:SetAttribute("type1", slot:GetAttribute("saved-type"))
+    end
+    return nil, "close"
+]]
+local combatBlockers = {}
+local function DiscoverCombatBlockers()
+    if not initialized or InCombatLockdown() then return end
+    owner:SetAttribute("gamepad-ui", InputUtil.IsGamepadUIEnabled())
+    local function Watch(panel)
+        if not panel or panel == wheel or panel == owner or combatBlockers[panel]
+            or not panel.IsForbidden or panel:IsForbidden() then return end
+        local proxy = CreateFrame("Frame", nil, panel, "SecureHandlerBaseTemplate")
+        combatBlockers[panel] = proxy
+        local count = (owner:GetAttribute("blocker-count") or 0) + 1
+        owner:SetAttribute("blocker-count", count)
+        owner:SetFrameRef("blocker-" .. count, proxy)
+        for _, script in ipairs({ "OnShow", "OnHide" }) do
+            SecureHandlerWrapScript(proxy, script, owner, [[ control:RunAttribute("combat-refresh") ]])
+        end
+        proxy:Show()
+    end
+    for name in pairs(UIPanelWindows or {}) do Watch(_G[name]) end
+    for _, name in ipairs(UISpecialFrames or {}) do Watch(_G[name]) end
+    local manager = GamepadMode and GamepadMode.FrameControlsManager
+    for _, panel in ipairs(manager and manager.shownFrames or {}) do Watch(panel) end
+    for _, name in ipairs({ "GamepadRadial", "GamepadHudMode", "GamepadActionBarEditFrame",
+        "GameMenuFrame", "StaticPopup1", "StaticPopup2", "StaticPopup3", "StaticPopup4",
+        "CinematicFrame", "MovieFrame" }) do Watch(_G[name]) end
+    for _, name in ipairs(CHAT_FRAMES or {}) do
+        local chat = _G[name]
+        if chat then Watch(chat.editBox) end
+    end
+    for i = 0, 7 do
+        if C_GamePad.StickIndexToConfigName(i) == "Camera" then
+            owner:SetAttribute("camera-stick", i + 1)
+            break
+        end
+    end
+end
 
 local function ClearFallback()
     if fallbackBound then
@@ -116,7 +238,8 @@ local function SetAction(button, entry)
     button:SetAttribute("spell", nil)
     button:SetAttribute("item", nil)
     button:SetAttribute("macro", nil)
-    if not entry or editing then return end
+    button:SetAttribute("saved-type", nil)
+    if not entry then return end
     if entry.kind == "spell" then
         -- Rankless spell names follow the highest learned rank.
         local name = GetEntryInfo(entry)
@@ -134,23 +257,28 @@ local function SetAction(button, entry)
         button:SetAttribute("item", "item:" .. entry.id)
         button:SetAttribute("type1", "item")
     end
+    button:SetAttribute("saved-type", button:GetAttribute("type1"))
+    if editing then button:SetAttribute("type1", nil) end
 end
 
 local function SetFooter()
-    if pendingEntry then
+    if InCombatLockdown() then
+        wheel.Footer:SetText("Hold Share · Aim right stick · Release Share: use\nCircle: cancel · Editing available outside combat")
+    elseif pendingEntry then
         local name = GetEntryInfo(pendingEntry) or "Selected action"
         wheel.Footer:SetText(name .. "\nRight stick: select · X: assign · Square: remove · Circle: back")
     elseif editing then
         wheel.Footer:SetText("Right stick: select · Square: remove · Triangle: done\nCircle / Share: close · Drag an item, spell, or macro to add")
     else
-        wheel.Footer:SetText("Right stick: select · X: use · Circle / Share: close\nTriangle: edit · Add through the native Bind menu → Share")
+        wheel.Footer:SetText("Hold Share · Aim right stick · Release Share: use\nCircle: cancel · Triangle: edit")
     end
 end
 
 SelectSlot = function(index)
-    if InCombatLockdown() then return end
     selected = index
-    SetAction(confirm, index and ForeverTweaksQuickMenu[index])
+    -- Frame IDs carry the visual selection without changing protected action
+    -- attributes during stick input; Share release reads it before activation.
+    wheel:SetID(index or 0)
     wheel.SegmentHighlight:SetShown(index ~= nil)
     if index then
         local angle, x, y = slots[index].art:GetSegmentRotationAndOffset()
@@ -216,11 +344,13 @@ end
 
 RefreshBindings = function()
     if not initialized or InCombatLockdown() then return end
+    DiscoverCombatBlockers()
     if not wheel:IsShown() then
         SetStickListening(false)
         wheel:EnableGamePadButton(false)
     end
     local entry = GetNativeBindEntry()
+    owner:SetAttribute("bind-mode", entry ~= nil)
     if wheel:IsShown() and pendingEntry
         and (not entry or entry.kind ~= pendingEntry.kind or entry.id ~= pendingEntry.id) then
         wheel:Hide()
@@ -243,18 +373,19 @@ end
 
 ApplyWheelBindings = function()
     if InCombatLockdown() then return end
+    wheel:SetAttribute("editing", editing)
     ClearOverrideBindings(wheel)
     SetOverrideBindingClick(wheel, true, "ESCAPE", cancel:GetName(), "LeftButton")
     -- The edit wheel consumes gamepad input above Blizzard's raw binding
     -- listener. Its X/Square presses must never also rebind an action-bar slot.
     wheel:EnableGamePadButton(editing)
     if not editing then
-        SetOverrideBindingClick(wheel, true, "PAD1", confirm:GetName(), "LeftButton")
-        for _, key in ipairs({ "PAD2", SHARE }) do
+        SetOverrideBindingClick(wheel, true, SHARE, opener:GetName(), "LeftButton")
+        for _, key in ipairs({ "PAD2" }) do
             SetOverrideBindingClick(wheel, true, key, cancel:GetName(), "LeftButton")
         end
         SetOverrideBindingClick(wheel, true, "PAD4", editor:GetName(), "LeftButton")
-        for _, key in ipairs({ "PAD3", "PADDUP", "PADDRIGHT", "PADDDOWN", "PADDLEFT",
+        for _, key in ipairs({ "PAD1", "PAD3", "PADDUP", "PADDRIGHT", "PADDDOWN", "PADDLEFT",
             "PADLSHOULDER", "PADRSHOULDER", "PADLTRIGGER", "PADRTRIGGER", "PADRSTICK" }) do
             SetOverrideBindingClick(wheel, true, key, "ForeverTweaksQuickMenuBlock", "LeftButton")
         end
@@ -284,7 +415,7 @@ end
 OpenWheel = function(editMode, entry)
     if not initialized then return end
     if InCombatLockdown() then
-        Notice("The quick menu is available outside combat.")
+        Notice("Use Share to open the quick menu in combat; editing is available outside combat.")
         return
     end
     if wheel:IsShown() then
@@ -404,14 +535,26 @@ local function Initialize()
     wheel:SetFrameStrata("DIALOG")
     wheel:SetClampedToScreen(true)
     owner:SetFrameRef("wheel", wheel)
-    owner:SetAttribute("_onstate-combat", [[
-        if newstate == "combat" then
-            self:ClearBindings()
-            self:GetFrameRef("wheel"):Hide()
+    owner:SetAttribute("blocker-count", 0)
+    owner:SetAttribute("camera-stick", 2)
+    owner:SetAttribute("combat-refresh", COMBAT_REFRESH)
+    owner:SetAttribute("_onstate-combat", COMBAT_STATE)
+    wheel:SetFrameRef("owner", owner)
+    wheel:SetAttribute("_onshow", [[
+        if self:GetFrameRef("owner"):GetAttribute("state-combat") == "combat" then
+            self:EnableGamePadButton(false)
+            self:EnableGamePadStick(true)
+            self:GetFrameRef("owner"):RunAttribute("combat-refresh")
         end
     ]])
-    wheel:SetAttribute("_onhide", [[ self:ClearBindings() ]])
-    RegisterStateDriver(owner, "combat", "[combat] combat; peace")
+    wheel:SetAttribute("_onhide", [[
+        local opener = self:GetFrameRef("owner"):GetFrameRef("opener")
+        if opener then opener:SetAttribute("hold-armed", nil) end
+        self:ClearBindings()
+        self:EnableGamePadButton(false)
+        self:EnableGamePadStick(false)
+        self:GetFrameRef("owner"):RunAttribute("combat-refresh")
+    ]])
     -- Keep this transient wheel out of UISpecialFrames/UIPanelWindows.
     -- Fullscreen menu managers discover those registries and replace geometry;
     -- the wheel instead owns its temporary Escape binding, including edit mode.
@@ -434,7 +577,6 @@ local function Initialize()
     wheel.Footer:SetPoint("CENTER", wheel.FooterBackground, "CENTER")
     wheel.Footer:SetSize(450, 70)
 
-    confirm = ActionButton("ForeverTweaksQuickMenuConfirm", wheel)
     local anchors = { {150, 0}, {112, 112}, {0, 150}, {-112, 112},
         {-150, 0}, {-112, -112}, {0, -150}, {112, -112} }
     for index, anchor in ipairs(anchors) do
@@ -484,16 +626,34 @@ local function Initialize()
             RefreshSlots()
         end)
         slots[index] = button
+        owner:SetFrameRef("slot-" .. index, button)
     end
-    opener = CreateFrame("Button", "ForeverTweaksQuickMenuOpen", UIParent)
-    opener:RegisterForClicks("AnyUp")
-    opener:SetScript("OnClick", function()
+    opener = CreateFrame("Button", "ForeverTweaksQuickMenuOpen", UIParent, "SecureActionButtonTemplate")
+    opener:RegisterForClicks("AnyDown", "AnyUp")
+    opener:SetAttribute("useOnKeyDown", false)
+    owner:SetFrameRef("opener", opener)
+    owner.OpenFromShare = function()
+        if InCombatLockdown() then return end
         local entry = GetNativeBindEntry()
         OpenWheel(entry ~= nil, entry)
-    end)
-    cancel = CreateFrame("Button", "ForeverTweaksQuickMenuClose", wheel)
+    end
+    SecureHandlerWrapScript(opener, "OnClick", owner, SHARE_HOLD, [[
+        if message == "open" then
+            control:CallMethod("OpenFromShare")
+        elseif message == "close" then
+            control:GetFrameRef("wheel"):Hide()
+            self:SetAttribute("type1", nil)
+        end
+    ]])
+    cancel = CreateFrame("Button", "ForeverTweaksQuickMenuClose", wheel, "SecureHandlerClickTemplate")
     cancel:RegisterForClicks("AnyUp")
     cancel:SetScript("OnClick", function() if not InCombatLockdown() then wheel:Hide() end end)
+    SecureHandlerWrapScript(cancel, "OnClick", owner, [[
+        if control:GetAttribute("state-combat") == "combat" then
+            control:GetFrameRef("wheel"):Hide()
+            return false
+        end
+    ]])
     editor = CreateFrame("Button", "ForeverTweaksQuickMenuEdit", wheel)
     editor:RegisterForClicks("AnyUp")
     editor:SetScript("OnClick", BeginEditing)
@@ -501,10 +661,12 @@ local function Initialize()
     blocker:RegisterForClicks("AnyDown", "AnyUp")
     wheel:SetScript("OnGamepadStick", function(_, stick, x, y)
         if stick ~= "Camera" or not wheel:IsShown() then return true end
-        if not InCombatLockdown() and x * x + y * y > 0.25 then
+        if x * x + y * y > 0.25 then
             local angle = math.deg(math.atan2(y, x))
             SelectSlot(math.floor((angle + 22.5) / 45) % 8 + 1)
         end
+        -- Stick callbacks can paint selection, but cannot activate protected
+        -- items/spells/macros, even outside combat. Share release activates.
         return false
     end)
     wheel:SetScript("OnGamePadButtonDown", function(_, key)
@@ -533,10 +695,16 @@ local function Initialize()
         end
         return false
     end)
+    wheel:HookScript("OnShow", function()
+        if InCombatLockdown() then editing = false; listening = true; SelectSlot(nil) end
+        SetFooter()
+    end)
     wheel:HookScript("OnHide", function()
         SetStickListening(false)
         GameTooltip:Hide()
         pendingEntry, editKey = nil, nil
+        listening = false
+        if InCombatLockdown() then editing = false end
         if not InCombatLockdown() then
             ClearOverrideBindings(wheel)
             wheel:EnableGamePadButton(false)
@@ -554,6 +722,8 @@ local function Initialize()
     end) end
     initialized = true
     RefreshSlots()
+    DiscoverCombatBlockers()
+    RegisterStateDriver(owner, "combat", "[combat] combat; peace")
     RefreshBindings()
 end
 
@@ -570,12 +740,13 @@ end
 driver:RegisterEvent("PLAYER_LOGIN")
 driver:RegisterEvent("ADDON_LOADED")
 driver:RegisterEvent("PLAYER_REGEN_ENABLED")
+driver:RegisterEvent("PLAYER_REGEN_DISABLED")
 driver:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 driver:RegisterEvent("SPELLS_CHANGED")
 driver:RegisterEvent("UPDATE_MACROS")
 driver:SetScript("OnEvent", function(_, event)
     if event == "PLAYER_LOGIN" or event == "PLAYER_REGEN_ENABLED" or IsLoggedIn() then Initialize() end
-    if initialized then RefreshSlots(); RefreshBindings() end
+    if initialized then RefreshSlots(); RefreshBindings(); SetFooter() end
 end)
 local elapsed = 0
 driver:SetScript("OnUpdate", function(_, delta)
