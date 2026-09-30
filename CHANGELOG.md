@@ -1,5 +1,7 @@
 # Changelog
 
+- Added a Share quick-wheel destination to the native item/spell Bind menu, with right-stick slot selection, X assignment, Square removal, and controller editing from the wheel.
+
 - Excluded the quick wheel from fullscreen-menu discovery by replacing its special-frame registration with temporary Escape bindings in normal and edit modes.
 
 - Positioned the quick wheel on the left as a mirror of the native right-hand radial menu.

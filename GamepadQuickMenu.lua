@@ -3,6 +3,8 @@ local driver = CreateFrame("Frame")
 local owner, wheel, opener, confirm, cancel, editor
 local slots, selected, editing, initialized = {}, nil, false, false
 local fallbackBound, listening = false, false
+local pendingEntry, bindPrompt, editKey
+local ApplyWheelBindings, RefreshBindPrompt
 local SHARE = "PADBACK"
 local OPEN_BINDING = "CLICK ForeverTweaksQuickMenuOpen:LeftButton"
 local RefreshBindings, RefreshSlots, SelectSlot, OpenWheel
@@ -44,6 +46,29 @@ local function WorldIsClear()
         and not InCinematic() and not IsInCinematicScene()
 end
 
+-- Read the selection already prepared by Blizzard's item/spell Bind action.
+-- Moving an existing bar action is deliberately excluded: that mode owns an
+-- emptied source slot and must finish through Blizzard's move/undo workflow.
+local function GetNativeBindEntry()
+    local source = GamepadActionBarEditFrame
+    if not source or not source:IsShown() or source.activeMode ~= "BIND_ACTION"
+        or not source.pickupParams or not NativeUIAvailable()
+        or GamepadMode.FrameControlsManager:GetActiveFrame() ~= source
+        or (GamepadRadial and GamepadRadial:IsShown()) then return end
+    local params = source.pickupParams
+    local kind, id
+    if source.pickupFunc == C_Item.PickupItem and source.displayedActionType == "ITEM" then
+        kind, id = "item", params[1]
+    elseif source.pickupFunc == C_Spell.PickupSpell and source.displayedActionType == "SPELL" then
+        kind, id = "spell", params[1]
+    elseif source.pickupFunc == C_SpellBook.PickupSpellBookItem
+        and source.displayedActionType == "SPELL" then
+        local info = C_SpellBook.GetSpellBookItemInfo(params[1], params[2])
+        kind, id = "spell", info and info.spellID
+    end
+    if type(id) == "number" and id > 0 then return { kind = kind, id = id } end
+end
+
 local function GetEntryInfo(entry)
     if not entry then return end
     if entry.kind == "spell" then
@@ -74,9 +99,14 @@ local function SetAction(button, entry)
 end
 
 local function SetFooter()
-    wheel.Footer:SetText(editing
-        and "Drag an item or spell onto a slot\nRight-click a slot to remove it · Escape to close"
-        or "Right stick: select · X: use · Circle / Share: close\nTriangle: edit · /ftquick edit: add items and spells")
+    if pendingEntry then
+        local name = GetEntryInfo(pendingEntry) or "Selected action"
+        wheel.Footer:SetText(name .. "\nRight stick: select · X: assign · Square: remove · Circle: back")
+    elseif editing then
+        wheel.Footer:SetText("Right stick: select · Square: remove · Triangle: done\nCircle / Share: close · Drag an item or spell to add")
+    else
+        wheel.Footer:SetText("Right stick: select · X: use · Circle / Share: close\nTriangle: edit · Add through the native Bind menu → Share")
+    end
 end
 
 SelectSlot = function(index)
@@ -145,13 +175,21 @@ end
 
 RefreshBindings = function()
     if not initialized or InCombatLockdown() then return end
-    if not wheel:IsShown() then SetStickListening(false) end
-    if wheel:IsShown() and not editing and not WorldIsClear() then
+    if not wheel:IsShown() then
+        SetStickListening(false)
+        wheel:EnableGamePadButton(false)
+    end
+    local entry = GetNativeBindEntry()
+    if wheel:IsShown() and pendingEntry
+        and (not entry or entry.kind ~= pendingEntry.kind or entry.id ~= pendingEntry.id) then
+        wheel:Hide()
+    elseif wheel:IsShown() and not editing and not WorldIsClear() then
         wheel:Hide()
     end
+    RefreshBindPrompt(entry)
     local action = GetBindingAction(SHARE, true)
-    local shouldBind = not wheel:IsShown() and WorldIsClear()
-        and (action == "TOGGLEUIFOCUS" or action == OPEN_BINDING)
+    local shouldBind = not wheel:IsShown() and (entry or (WorldIsClear()
+        and (action == "TOGGLEUIFOCUS" or action == OPEN_BINDING)))
     if shouldBind then
         if action ~= OPEN_BINDING then
             SetOverrideBindingClick(owner, true, SHARE, opener:GetName(), "LeftButton")
@@ -162,17 +200,47 @@ RefreshBindings = function()
     end
 end
 
+ApplyWheelBindings = function()
+    if InCombatLockdown() then return end
+    ClearOverrideBindings(wheel)
+    SetOverrideBindingClick(wheel, true, "ESCAPE", cancel:GetName(), "LeftButton")
+    -- The edit wheel consumes gamepad input above Blizzard's raw binding
+    -- listener. Its X/Square presses must never also rebind an action-bar slot.
+    wheel:EnableGamePadButton(editing)
+    if not editing then
+        SetOverrideBindingClick(wheel, true, "PAD1", confirm:GetName(), "LeftButton")
+        for _, key in ipairs({ "PAD2", SHARE }) do
+            SetOverrideBindingClick(wheel, true, key, cancel:GetName(), "LeftButton")
+        end
+        SetOverrideBindingClick(wheel, true, "PAD4", editor:GetName(), "LeftButton")
+        for _, key in ipairs({ "PAD3", "PADDUP", "PADDRIGHT", "PADDDOWN", "PADDLEFT",
+            "PADLSHOULDER", "PADRSHOULDER", "PADLTRIGGER", "PADRTRIGGER", "PADRSTICK" }) do
+            SetOverrideBindingClick(wheel, true, key, "ForeverTweaksQuickMenuBlock", "LeftButton")
+        end
+    end
+    SetStickListening(true)
+end
+
 local function BeginEditing()
     if InCombatLockdown() then return end
     editing = true
-    ClearOverrideBindings(wheel)
-    SetOverrideBindingClick(wheel, true, "ESCAPE", cancel:GetName(), "LeftButton")
-    SetStickListening(false)
-    SelectSlot(nil)
+    ApplyWheelBindings()
     RefreshSlots()
 end
 
-OpenWheel = function(editMode)
+local function AssignPending(index)
+    if not index or not pendingEntry or InCombatLockdown() then return end
+    local entry = GetNativeBindEntry()
+    if not entry or entry.kind ~= pendingEntry.kind or entry.id ~= pendingEntry.id then
+        wheel:Hide()
+        return
+    end
+    ForeverTweaksQuickMenu[index] = { kind = entry.kind, id = entry.id }
+    Notice((GetEntryInfo(entry) or "Action") .. " assigned to quick-menu slot " .. index .. ".")
+    wheel:Hide()
+end
+
+OpenWheel = function(editMode, entry)
     if not initialized then return end
     if InCombatLockdown() then
         Notice("The quick menu is available outside combat.")
@@ -184,25 +252,36 @@ OpenWheel = function(editMode)
     end
     if not editMode and not WorldIsClear() then return end
     editing = editMode or false
+    pendingEntry = entry
+    -- Stay above the native bind listener while choosing a destination.
+    wheel:SetFrameStrata(editing and "FULLSCREEN_DIALOG" or "DIALOG")
     ClearFallback()
     SelectSlot(nil)
     RefreshSlots()
     wheel:Show()
-    if editing then
-        SetOverrideBindingClick(wheel, true, "ESCAPE", cancel:GetName(), "LeftButton")
-        return
+    ApplyWheelBindings()
+end
+
+-- An independent native-style prompt avoids inserting addon callbacks into
+-- Blizzard's shared footer or binding-stack tables.
+RefreshBindPrompt = function(entry)
+    local source = GamepadActionBarEditFrame
+    if not bindPrompt and source and source.BindingInfoFrame then
+        bindPrompt = CreateFrame("Frame", nil, source.BindingInfoFrame, "InputPromptOneIconWithTextTemplate")
+        local footer = source.bindingModeFooter and source.bindingModeFooter.inputLegend
+        bindPrompt:SetPoint("TOPLEFT", footer or source.BindingInfoFrame, "BOTTOMLEFT", 0, footer and -8 or -50)
+        bindPrompt:SetPromptInputIconKey(1, GAMEPAD_MENU_LEFT)
+        bindPrompt:SetPromptText("Quick Menu")
+        bindPrompt:SetPromptFont("GameFontNormal")
+        bindPrompt:SetInputIconSize(1, 20, 20)
+        source:HookScript("OnHide", function()
+            if pendingEntry and not InCombatLockdown() then wheel:Hide() end
+            RefreshBindings()
+        end)
+        hooksecurefunc(source, "EnterBindingMode", RefreshBindings)
+        hooksecurefunc(source, "ExitBindingMode", RefreshBindings)
     end
-    -- Bind directly to secure buttons. A stick callback never casts a spell.
-    SetOverrideBindingClick(wheel, true, "PAD1", confirm:GetName(), "LeftButton")
-    for _, key in ipairs({ "PAD2", SHARE, "ESCAPE" }) do
-        SetOverrideBindingClick(wheel, true, key, cancel:GetName(), "LeftButton")
-    end
-    SetOverrideBindingClick(wheel, true, "PAD4", editor:GetName(), "LeftButton")
-    for _, key in ipairs({ "PAD3", "PADDUP", "PADDRIGHT", "PADDDOWN", "PADDLEFT",
-        "PADLSHOULDER", "PADRSHOULDER", "PADLTRIGGER", "PADRTRIGGER", "PADRSTICK" }) do
-        SetOverrideBindingClick(wheel, true, key, "ForeverTweaksQuickMenuBlock", "LeftButton")
-    end
-    SetStickListening(true)
+    if bindPrompt then bindPrompt:SetShown(entry ~= nil and not wheel:IsShown()) end
 end
 
 local function Texture(parent, key, atlas, layer, sublevel)
@@ -316,6 +395,8 @@ local function Initialize()
             if InCombatLockdown() then return end
             if mouseButton == "RightButton" and editing then
                 ForeverTweaksQuickMenu[self:GetID()] = nil
+            elseif mouseButton == "LeftButton" and pendingEntry then
+                AssignPending(self:GetID())
             elseif mouseButton == "LeftButton" and self.receivedCursor then
                 ReceiveEntry(self)
             end
@@ -326,7 +407,10 @@ local function Initialize()
     end
     opener = CreateFrame("Button", "ForeverTweaksQuickMenuOpen", UIParent)
     opener:RegisterForClicks("AnyUp")
-    opener:SetScript("OnClick", function() OpenWheel(false) end)
+    opener:SetScript("OnClick", function()
+        local entry = GetNativeBindEntry()
+        OpenWheel(entry ~= nil, entry)
+    end)
     cancel = CreateFrame("Button", "ForeverTweaksQuickMenuClose", wheel)
     cancel:RegisterForClicks("AnyUp")
     cancel:SetScript("OnClick", function() if not InCombatLockdown() then wheel:Hide() end end)
@@ -336,17 +420,47 @@ local function Initialize()
     local blocker = CreateFrame("Button", "ForeverTweaksQuickMenuBlock", wheel)
     blocker:RegisterForClicks("AnyDown", "AnyUp")
     wheel:SetScript("OnGamepadStick", function(_, stick, x, y)
-        if stick ~= "Camera" or editing or not wheel:IsShown() then return true end
+        if stick ~= "Camera" or not wheel:IsShown() then return true end
         if not InCombatLockdown() and x * x + y * y > 0.25 then
             local angle = math.deg(math.atan2(y, x))
             SelectSlot(math.floor((angle + 22.5) / 45) % 8 + 1)
         end
         return false
     end)
+    wheel:SetScript("OnGamePadButtonDown", function(_, key)
+        if not editing or not wheel:IsShown() then return true end
+        editKey = key
+        return false
+    end)
+    wheel:SetScript("OnGamePadButtonUp", function(_, key)
+        if not editing or not wheel:IsShown() then return true end
+        if InCombatLockdown() or editKey ~= key then return false end
+        editKey = nil
+        -- Finish on release so returning to native bindings cannot replay the
+        -- release into a newly restored action or reopen the wheel.
+        if key == "PAD1" then
+            AssignPending(selected)
+        elseif key == "PAD3" and selected then
+            ForeverTweaksQuickMenu[selected] = nil
+            RefreshSlots()
+        elseif key == "PAD2" or key == SHARE then
+            wheel:Hide()
+        elseif key == "PAD4" and not pendingEntry and WorldIsClear() then
+            editing = false
+            wheel:SetFrameStrata("DIALOG")
+            ApplyWheelBindings()
+            RefreshSlots()
+        end
+        return false
+    end)
     wheel:HookScript("OnHide", function()
         SetStickListening(false)
         GameTooltip:Hide()
-        if not InCombatLockdown() then ClearOverrideBindings(wheel) end
+        pendingEntry, editKey = nil, nil
+        if not InCombatLockdown() then
+            ClearOverrideBindings(wheel)
+            wheel:EnableGamePadButton(false)
+        end
     end)
     -- Hooks only refresh our own bindings after native transitions complete.
     local manager = GamepadMode and GamepadMode.FrameControlsManager
