@@ -1,5 +1,7 @@
 # Changelog
 
+- Fixed combat quick-wheel blocking from idle IM chat by tracking native chat-focus footers instead of persistent chat windows and edit boxes.
+
 - Added hold-Share activation: hold Share to open, aim the right stick, and release Share to activate in or out of combat; the last selected slot stays highlighted after recentering and activates on release. Removed X activation from the normal wheel; X remains available for slot assignment in edit mode.
 
 - Removed stick-recenter activation after the client rejected its protected item-use call outside combat; retained physical X confirmation.

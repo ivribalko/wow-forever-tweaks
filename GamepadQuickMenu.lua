@@ -99,7 +99,20 @@ local combatBlockers = {}
 local function DiscoverCombatBlockers()
     if not initialized or InCombatLockdown() then return end
     owner:SetAttribute("gamepad-ui", InputUtil.IsGamepadUIEnabled())
+    -- IM edit boxes remain shown while idle, and chat windows stay visible
+    -- after leaving the focus manager. Only the native focus footer reflects
+    -- whether chat currently owns the controller, in either chat style.
+    local chatOwners = {}
+    for _, name in ipairs(CHAT_FRAMES or {}) do
+        local chat = _G[name]
+        if chat then
+            chatOwners[chat] = chat
+            if chat.editBox then chatOwners[chat.editBox] = chat end
+        end
+    end
     local function Watch(panel)
+        local chat = panel and chatOwners[panel]
+        if chat then panel = chat.footer end
         if not panel or panel == wheel or panel == owner or combatBlockers[panel]
             or not panel.IsForbidden or panel:IsForbidden() then return end
         local proxy = CreateFrame("Frame", nil, panel, "SecureHandlerBaseTemplate")
@@ -121,7 +134,7 @@ local function DiscoverCombatBlockers()
         "CinematicFrame", "MovieFrame" }) do Watch(_G[name]) end
     for _, name in ipairs(CHAT_FRAMES or {}) do
         local chat = _G[name]
-        if chat then Watch(chat.editBox) end
+        if chat then Watch(chat.footer) end
     end
     for i = 0, 7 do
         if C_GamePad.StickIndexToConfigName(i) == "Camera" then
