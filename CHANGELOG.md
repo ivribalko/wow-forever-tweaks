@@ -1,5 +1,7 @@
 # Changelog
 
+- Fixed native confirmation dialogs stretching toward the screen bottom by excluding quick-wheel visibility blockers from native layout sizing.
+
 - Gave the empty reserved quest slot a dimmed native quest exclamation icon, distinct from empty custom slots.
 
 - Simplified the normal quick-wheel hint to the native triangle-button icon and Edit, dimmed during combat; edit mode uses the native square-button icon and Remove.

@@ -136,6 +136,10 @@ local function DiscoverCombatBlockers()
         if not panel or panel == wheel or panel == owner or combatBlockers[panel]
             or not panel.IsForbidden or panel:IsForbidden() then return end
         local proxy = CreateFrame("Frame", nil, panel, "SecureHandlerBaseTemplate")
+        -- Native resize layouts must not include this visibility-only child.
+        proxy.ignoreInLayout = true
+        proxy:SetSize(1, 1)
+        proxy:SetPoint("TOPLEFT", panel, "TOPLEFT")
         combatBlockers[panel] = proxy
         local count = (owner:GetAttribute("blocker-count") or 0) + 1
         owner:SetAttribute("blocker-count", count)
