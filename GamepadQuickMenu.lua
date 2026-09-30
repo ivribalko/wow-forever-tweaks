@@ -89,7 +89,7 @@ local SHARE_HOLD = [[
             return nil, false
         elseif control:GetAttribute("bind-mode") then
             self:SetAttribute("bind-press", true)
-            return nil, false
+            return nil, "open"
         else
             self:SetAttribute("hold-armed", true)
             return nil, "open"
@@ -97,7 +97,7 @@ local SHARE_HOLD = [[
     end
     if self:GetAttribute("bind-press") then
         self:SetAttribute("bind-press", nil)
-        return nil, "open"
+        return nil, "assign"
     end
     local armed = self:GetAttribute("hold-armed")
     self:SetAttribute("hold-armed", nil)
@@ -337,7 +337,7 @@ local function SetFooter()
         wheel.Footer:SetText("Hold Share · Aim right stick · Release Share: use\nCircle: cancel · Editing available outside combat")
     elseif pendingEntry then
         local name = GetEntryInfo(pendingEntry) or "Selected action"
-        wheel.Footer:SetText(name .. "\nRight stick: select · X: assign · Square: remove · Circle: back")
+        wheel.Footer:SetText(name .. "\nHold Share · Aim right stick · Release Share: assign · Circle: back")
     elseif editing then
         wheel.Footer:SetText("Right stick: select · Square: remove · Triangle: done\nCircle / Share: close · Drag an item, spell, or macro to add")
     else
@@ -480,6 +480,13 @@ local function AssignPending(index)
     wheel:Hide()
 end
 
+-- A binding hold only assigns; it never activates the destination action.
+local function FinishBinding()
+    if InCombatLockdown() or not pendingEntry or not wheel:IsShown() then return end
+    AssignPending(selected)
+    if wheel:IsShown() then wheel:Hide() end
+end
+
 OpenWheel = function(editMode, entry)
     if not initialized then return end
     if InCombatLockdown() then
@@ -543,7 +550,7 @@ RefreshBindPrompt = function(entry)
         bindPrompt = CreateFrame("Frame", nil, footer.promptContainerFrame, "InputPromptOneIconWithTextTemplate")
         bindPrompt:Hide()
         bindPrompt:SetPromptInputIconKey(1, GAMEPAD_MENU_LEFT)
-        bindPrompt:SetPromptText("Quick Menu")
+        bindPrompt:SetPromptText("Hold: Quick Menu")
         bindPrompt:SetPromptFont("GameFontNormal")
         bindPrompt:SetInputIconSize(1, 24, 24)
         hooksecurefunc(footer, "ApplyDefaultPromptPositioning", LayoutBindPrompt)
@@ -624,7 +631,10 @@ local function Initialize()
     ]])
     wheel:SetAttribute("_onhide", [[
         local opener = self:GetFrameRef("owner"):GetFrameRef("opener")
-        if opener then opener:SetAttribute("hold-armed", nil) end
+        if opener then
+            opener:SetAttribute("hold-armed", nil)
+            opener:SetAttribute("bind-press", nil)
+        end
         self:GetFrameRef("owner"):SetAttribute("selected-slot", nil)
         self:ClearBindings()
         self:EnableGamePadButton(false)
@@ -719,6 +729,7 @@ local function Initialize()
     opener:RegisterForClicks("AnyDown", "AnyUp")
     opener:SetAttribute("useOnKeyDown", false)
     owner:SetFrameRef("opener", opener)
+    owner.FinishBinding = FinishBinding
     owner.OpenFromShare = function()
         if InCombatLockdown() then return end
         local entry = GetNativeBindEntry()
@@ -727,6 +738,8 @@ local function Initialize()
     SecureHandlerWrapScript(opener, "OnClick", owner, SHARE_HOLD, [[
         if message == "open" then
             control:CallMethod("OpenFromShare")
+        elseif message == "assign" then
+            control:CallMethod("FinishBinding")
         elseif message == "close" then
             control:GetFrameRef("wheel"):Hide()
             self:SetAttribute("type1", nil)
@@ -763,13 +776,18 @@ local function Initialize()
     end)
     wheel:SetScript("OnGamePadButtonUp", function(_, key)
         if not editing or not wheel:IsShown() then return true end
-        if InCombatLockdown() or editKey ~= key then return false end
+        if InCombatLockdown() then return false end
+        -- The opening Share down reached the opener before this raw listener
+        -- was enabled, so its matching release has no editKey to compare.
+        if key == SHARE and pendingEntry then
+            FinishBinding()
+            return false
+        end
+        if editKey ~= key then return false end
         editKey = nil
         -- Finish on release so returning to native bindings cannot replay the
         -- release into a newly restored action or reopen the wheel.
-        if key == "PAD1" then
-            AssignPending(selected)
-        elseif key == "PAD3" and selected then
+        if key == "PAD3" and selected and not pendingEntry then
             ForeverTweaksQuickMenu[selected] = nil
             RefreshSlots()
         elseif key == "PAD2" or key == SHARE then
