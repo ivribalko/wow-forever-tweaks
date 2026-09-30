@@ -287,6 +287,9 @@ end)
 local gamepadSettings = CreateFrame("Frame")
 gamepadSettings:RegisterEvent("PLAYER_LOGIN")
 gamepadSettings:SetScript("OnEvent", function(self)
+    -- Native nameplate range is shared by enemy and enabled friendly plates.
+    C_CVar.SetCVar("nameplateMaxDistance", "60")
+    C_CVar.SetCVar("nameplatePlayerMaxDistance", "60")
     C_CVar.SetCVar("GamepadShowAutoAuraTooltip", "0")
     -- GameTooltip_OnShow hides item tooltips in focused menus when this is enabled.
     C_CVar.SetCVar("GamepadDisableTooltips", "0")
