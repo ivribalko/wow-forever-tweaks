@@ -1,5 +1,7 @@
 # Changelog
 
+- Removed instance hooks on native Bind entry and exit methods to avoid taint when reopening the picker.
+
 - Moved Square removal into the normal quick wheel and removed standalone edit mode; native Bind remains the assignment path.
 
 - Fixed native confirmation dialogs stretching toward the screen bottom by excluding quick-wheel visibility blockers from native layout sizing.

@@ -593,8 +593,10 @@ RefreshBindPrompt = function(entry)
             if pendingEntry and not InCombatLockdown() then wheel:Hide() end
             RefreshBindings()
         end)
-        hooksecurefunc(source, "EnterBindingMode", RefreshBindings)
-        hooksecurefunc(source, "ExitBindingMode", RefreshBindings)
+        -- These methods are inherited from the native mixin. Hooking them on
+        -- the instance creates addon-owned method slots used by later Bind
+        -- calls, tainting the native core-binding/interaction update. The
+        -- existing ticker discovers both transitions without replacing them.
     end
     if bindPrompt then
         local visible = entry ~= nil and not wheel:IsShown()
