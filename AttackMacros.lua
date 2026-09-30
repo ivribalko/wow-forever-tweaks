@@ -1,7 +1,7 @@
 -- Upgrade spell ranks and convert harmful actions outside combat.
 local _, addon = ...
 local events = CreateFrame("Frame")
-local state, queued, working, warned
+local state, queued, working
 
 local function ActionSlots()
     local slots = {}
@@ -236,10 +236,6 @@ local function EnsureMacro(spellID)
     end
     local limit = Constants.MacroConsts.MAX_CHARACTER_MACROS
     if count >= limit then
-        if not warned then
-            print("Forever Tweaks: Free character macro slots to convert more attack abilities.")
-            warned = true
-        end
         return
     end
     local index = CreateMacro("+", icon, body, true)
@@ -307,13 +303,9 @@ SlashCmdList.FOREVERTWEAKSATTACK = function(message)
     local command = message:lower():match("^%s*(.-)%s*$")
     if command == "restore" then
         state.enabled = false
-        print("Forever Tweaks: Attack macro conversion disabled; spells restore at their highest learned rank when out of combat with an empty cursor.")
     elseif command == "on" then
         state.enabled = true
-        warned = false
-        print("Forever Tweaks: Attack macro conversion enabled.")
     else
-        print("Forever Tweaks: /ftattack on | /ftattack restore")
         return
     end
     Schedule()
@@ -330,7 +322,7 @@ events:SetScript("OnEvent", function(_, event)
         ForeverTweaksAttackMacros = ForeverTweaksAttackMacros or { enabled = true, macros = {} }
         state = ForeverTweaksAttackMacros
     elseif event == "UPDATE_MACROS" and not working then
-        warned = false
+
     end
     Schedule()
 end)

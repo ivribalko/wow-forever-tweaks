@@ -182,10 +182,6 @@ local function SetStickListening(enable)
     end
 end
 
-local function Notice(message)
-    print("|cffffd100Forever Tweaks:|r " .. message)
-end
-
 local function NativeUIAvailable()
     return GamepadMode and GamepadMode.FrameControlsManager
         and GamepadSharedUtility and GamepadSharedUtility.InputBindingManager
@@ -501,7 +497,6 @@ end
 local function AssignPending(index)
     if not index or not pendingEntry or InCombatLockdown() then return end
     if index == QUEST_SLOT then
-        Notice("The top slot is reserved for the active quest item.")
         return
     end
     local entry = GetNativeBindEntry()
@@ -510,7 +505,7 @@ local function AssignPending(index)
         return
     end
     ForeverTweaksQuickMenu[index] = entry
-    Notice((GetEntryInfo(entry) or "Action") .. " assigned to quick-menu slot " .. index .. ".")
+
     wheel:Hide()
 end
 
@@ -524,7 +519,7 @@ end
 OpenWheel = function(entry)
     if not initialized then return end
     if InCombatLockdown() then
-        Notice("Use Share to open the quick menu in combat; assignment is available outside combat.")
+
         return
     end
     if wheel:IsShown() then
@@ -858,10 +853,10 @@ end
 SLASH_FOREVERTWEAKSQUICKMENU1 = "/ftquick"
 SlashCmdList.FOREVERTWEAKSQUICKMENU = function(message)
     Initialize()
-    if not initialized then Notice("The quick menu is not ready. Try again outside combat."); return end
+    if not initialized then return end
     local command = strtrim(message):lower()
     if command == "" then OpenWheel()
-    else Notice("/ftquick opens the wheel. Use native Bind to assign entries; Square removes the highlighted entry outside combat.") end
+    end
 end
 
 driver:RegisterEvent("PLAYER_LOGIN")

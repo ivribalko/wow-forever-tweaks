@@ -15,7 +15,6 @@ local function ConfigureInstanceChat()
         instanceFrame = FCF_OpenNewWindow("Instance", true)
     end
     if not instanceFrame then
-        print("Forever Tweaks: Free a chat window slot and reload to create the Instance tab.")
         return
     end
 

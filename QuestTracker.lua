@@ -76,9 +76,6 @@ local function SortQuestWatches()
     end
     if not accepted then
         lastRejectedOrder = desiredOrder
-        --@alpha@
-        print("Forever Tweaks: the client did not retain quest-level watch order.")
-        --@end-alpha@
     else
         lastRejectedOrder = nil
     end

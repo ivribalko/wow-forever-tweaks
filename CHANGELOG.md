@@ -1,5 +1,7 @@
 # Changelog
 
+- Removed all addon chat output, including quick-wheel assignment notices, capacity warnings, slash-command responses, and quest-order rejection messages.
+
 - Kept the native Bind-panel Quick Menu hint visible while Share is held and the binding picker is open.
 
 - Restored the Quick Menu hint inside the native Bind bottom panel as an unprotected visual-only child, with polling for background bounds and no native layout hooks.
