@@ -1,5 +1,9 @@
 # Changelog
 
+- Fixed missing leave-party helper text by using the native PARTY_LEAVE label with a fallback.
+
+- Removed native button-setup and helper-row visibility hooks from the invite/leave-party shortcut; polling follows native button resets and helper visibility.
+
 - Removed all addon chat output, including quick-wheel assignment notices, capacity warnings, slash-command responses, and quest-order rejection messages.
 
 - Kept the native Bind-panel Quick Menu hint visible while Share is held and the binding picker is open.

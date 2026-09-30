@@ -11,7 +11,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Shows action-button cooldown timers as a single value with native units instead of minutes and seconds together.
 - Adds a small reload button beside the compact action-bar toggle in a centered row below the minimap.
 - Adds a small icon below the minimap to toggle the native Use Compact Action Bar gamepad setting outside combat.
-- Adds L1+R1+X (bottom face button) to invite a selected friendly player or otherwise leave the current party or raid after confirmation, with a matching isolated entry in the top-left controller shortcuts helper.
+- Adds L1+R1+X (bottom face button) to invite a selected friendly player or otherwise leave the current party or raid after confirmation, with a matching isolated entry in the top-left controller shortcuts helper using the native leave-party label with a text fallback; button resets and helper visibility are observed without native method or helper-row script hooks.
 - Creates an Instance chat tab if missing and enables party, raid, and instance messages there, including leaders and raid warnings.
 - Sorts the full tracked-quest list by quest level, lowest first.
 - Shows the selected profession recipe's output tooltip with equipped-item comparisons.

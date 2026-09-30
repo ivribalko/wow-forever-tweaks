@@ -1,6 +1,6 @@
 -- Offers target invitations or leave-group confirmation in the shortcuts slot.
 local driver = CreateFrame("Frame")
-local shortcuts, prompt
+local shortcuts, prompt, promptAnchor
 local buttonPending = true
 local dialog = "FOREVER_TWEAKS_LEAVE_GROUP"
 
@@ -63,7 +63,7 @@ end
 
 local function RefreshPrompt(entry)
     local invite, available = GetShortcutAction()
-    entry:SetPromptText(invite and "Invite Target" or LEAVE_PARTY)
+    entry:SetPromptText(invite and "Invite Target" or (PARTY_LEAVE or "Leave Party"))
     entry:EnableOrDisablePrompt(available)
 end
 
@@ -72,7 +72,6 @@ local function Install()
     if not shortcuts and page and page.actionBars and page.actionBars.shortcutsBar
         and page.actionBars.shortcutsBar.faceBottomButton and not InCombatLockdown() then
         shortcuts = page.actionBars.shortcutsBar
-        hooksecurefunc(shortcuts, "SetUpActionButtons", RefreshButton)
         RefreshButton()
     end
 
@@ -91,18 +90,26 @@ local function Install()
         if bagsEntry then
             prompt = CreateFrame("Frame", nil, legend, "InputPromptOneIconWithTextTemplate")
             prompt:SetPromptInputIconKey(1, GAMEPAD_FACE_BOTTOM)
-            prompt:SetPromptText(LEAVE_PARTY)
+            prompt:SetPromptText(PARTY_LEAVE or "Leave Party")
             prompt:SetPromptFont("GameFontNormal")
             prompt:SetInputIconSize(1, 18, 18)
             prompt:SetPoint("TOPLEFT", bagsEntry, "TOPLEFT", 0, -24)
             prompt:SetShown(bagsEntry:IsShown())
-            prompt:HookScript("OnShow", RefreshPrompt)
-            bagsEntry:HookScript("OnShow", function() prompt:Show() end)
-            bagsEntry:HookScript("OnHide", function() prompt:Hide() end)
+            promptAnchor = bagsEntry
             RefreshPrompt(prompt)
         end
     end
-    if buttonPending then RefreshButton() end
+    -- Native setup can reset or swap the bottom-face button. Observe its
+    -- handler after native updates, without hooking an inherited method.
+    if shortcuts and (buttonPending
+        or shortcuts.faceBottomButton:GetScript("OnClick") ~= OnLeaveClick) then
+        RefreshButton()
+    end
+    if prompt and promptAnchor then
+        local visible = promptAnchor:IsVisible()
+        if visible and not prompt:IsShown() then RefreshPrompt(prompt) end
+        prompt:SetShown(visible)
+    end
 end
 
 driver:RegisterEvent("PLAYER_LOGIN")
@@ -119,5 +126,15 @@ driver:SetScript("OnEvent", function(_, event)
         buttonPending = true
         if prompt then RefreshPrompt(prompt) end
     end
+    Install()
+end)
+
+-- Follow native setup and helper visibility without running addon callbacks
+-- inside native button-setup or helper show/hide paths.
+local elapsed = 0
+driver:SetScript("OnUpdate", function(_, delta)
+    elapsed = elapsed + delta
+    if elapsed < 0.1 then return end
+    elapsed = 0
     Install()
 end)
