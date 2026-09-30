@@ -98,10 +98,10 @@ The native Bind-menu interact-target taint was resolved in game by replacing the
 
 ## Releases
 
-[`.pkgmeta`](.pkgmeta) configures CurseForge packaging as one `ForeverTweaks` folder. The manifest uses `@project-version@` for tag-based versions, and [CHANGELOG.md](CHANGELOG.md) supplies release notes. Repository documentation, tooling, and local captures are excluded.
+[`.pkgmeta`](.pkgmeta) configures CurseForge packaging as one `ForeverTweaks` folder. The manifest uses `@project-version@` for tag-based versions. Repository documentation, tooling, and local captures are excluded.
 
 - Connect the repository to a CurseForge project and select tag-only packaging using the [automatic packaging instructions](https://support.curseforge.com/support/solutions/articles/9000197281). Keep integration tokens in service settings, never in tracked files.
-- Update the changelog before tagging. Use `MAJOR.MINOR.PATCH-beta.NUMBER` for Beta, `MAJOR.MINOR.PATCH` for Release, and tags containing `alpha` for Alpha.
+- Use `MAJOR.MINOR.PATCH-beta.NUMBER` for Beta, `MAJOR.MINOR.PATCH` for Release, and tags containing `alpha` for Alpha.
 - Complete in-game acceptance checks before a Release tag, including reload, chat, combat fades, XP display, and controller behavior. Verify the published file’s game-version labels match Forever.
 - Commit and push the intended revision and tag only after manual confirmation. CurseForge packages that revision and substitutes the version.
 
