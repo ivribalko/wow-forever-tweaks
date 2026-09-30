@@ -2,20 +2,15 @@
 local driver = CreateFrame("Frame")
 local shortcuts, prompt, promptAnchor
 local buttonPending = true
-local dialog = "FOREVER_TWEAKS_LEAVE_GROUP"
+local confirmationData
 
-StaticPopupDialogs[dialog] = {
-    text = "Leave your current group?",
-    button1 = YES,
-    button2 = CANCEL,
-    OnAccept = function()
-        if IsInGroup() then C_PartyInfo.LeaveParty() end
-    end,
-    timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
-    preferredIndex = 3,
-}
+-- Do not add a dialog definition to StaticPopupDialogs: native gamepad popup
+-- initialization reads that definition before updating protected focus state.
+local function HideConfirmation()
+    local data = confirmationData
+    confirmationData = nil
+    if data then securecallfunction(StaticPopup_Hide, "GENERIC_CONFIRMATION", data) end
+end
 
 -- A friendly player keeps invite mode even when already grouped, so an
 -- unavailable invitation never silently becomes a leave-group action.
@@ -35,6 +30,28 @@ local function GetShortcutAction()
     return false, IsInGroup()
 end
 
+local function ShowConfirmation()
+    if confirmationData then return end
+    local data = {
+        text = "Leave your current group?",
+        acceptText = YES,
+        cancelText = CANCEL,
+    }
+    data.callback = function()
+        if confirmationData ~= data then return end
+        confirmationData = nil
+        local invite, available = GetShortcutAction()
+        if not invite and available then C_PartyInfo.LeaveParty() end
+    end
+    data.cancelCallback = function()
+        if confirmationData == data then confirmationData = nil end
+    end
+    confirmationData = data
+    -- Use the native GENERIC_CONFIRMATION definition and controller lifecycle.
+    -- The boundary alone was insufficient with an addon-owned definition.
+    securecallfunction(StaticPopup_ShowCustomGenericConfirmation, data)
+end
+
 local function OnLeaveClick(_, _, down)
     -- Both-shoulder mode already cancels native targeting. Do not write its
     -- wasModifierUsed field: native protected targeting code reads it later.
@@ -44,7 +61,7 @@ local function OnLeaveClick(_, _, down)
     if invite then
         C_PartyInfo.InviteUnit(name)
     else
-        StaticPopup_Show(dialog)
+        ShowConfirmation()
     end
 end
 
@@ -122,7 +139,7 @@ driver:RegisterEvent("UNIT_FACTION")
 driver:SetScript("OnEvent", function(_, event)
     if event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_TARGET_CHANGED" or event == "UNIT_FACTION" then
         -- Dismiss stale confirmations when the roster or selected action changes.
-        StaticPopup_Hide(dialog)
+        HideConfirmation()
         buttonPending = true
         if prompt then RefreshPrompt(prompt) end
     end
