@@ -1,5 +1,15 @@
 # Changelog
 
+- Re-enabled the quick wheel with secure visibility flags instead of protected proxy children attached to native panels.
+
+- Replaced the Bind hint’s native prompt template with plain addon-owned artwork and screen-coordinate placement, removing native icon callback registration and footer anchor dependencies.
+
+- Added bounded native-field taint ownership captures for protected Bind/interact failures in source and alpha packages.
+
+- Removed native focus-manager, controller-panel diagnostic, and stance-update method hooks from the Bind/interact call path; existing sampling and events observe changes.
+
+- Removed the Quick Menu hint’s native footer layout hook and resizing; its independent panel sits beside the Bind footer.
+
 - Removed instance hooks on native Bind entry and exit methods to avoid taint when reopening the picker.
 
 - Moved Square removal into the normal quick wheel and removed standalone edit mode; native Bind remains the assignment path.

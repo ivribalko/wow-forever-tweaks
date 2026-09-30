@@ -350,6 +350,61 @@ HideIssueReporter()
 local diagnosticEvents = CreateFrame("Frame")
 diagnosticEvents:RegisterEvent("ADDON_ACTION_BLOCKED")
 diagnosticEvents:RegisterEvent("ADDON_ACTION_FORBIDDEN")
+-- Record field ownership along the native Bind/interact path without hooking
+-- it or enabling client taint logging. Names and owners contain no unit data.
+local function CaptureNativeTaint()
+    local fields = {}
+    local function Inspect(label, object)
+        if type(object) ~= "table" then return end
+        for key in pairs(object) do
+            if type(key) == "string" then
+                local secure, owner = issecurevariable(object, key)
+                if not secure and #fields < 100 then
+                    fields[#fields + 1] = label .. "." .. key .. ":" .. tostring(owner)
+                end
+            end
+        end
+    end
+    for _, key in ipairs({ "GamepadActionBarEditFrame", "GamepadActionBarEditFrameMixin",
+        "GamepadMainActionBarFrame", "GamepadMainActionBarFrameMixin", "GamepadMode",
+        "GamepadSharedUtility", "GameTooltip", "GetCVarBool", "C_Item", "C_Container",
+        "InputUtil", "InputDeviceIconSetManager" }) do
+        local secure, owner = issecurevariable(_G, key)
+        if not secure then fields[#fields + 1] = "global." .. key .. ":" .. tostring(owner) end
+    end
+    Inspect("itemAPI", C_Item)
+    Inspect("containerAPI", C_Container)
+    Inspect("tooltip", GameTooltip)
+    local main = GamepadMainActionBarFrame
+    local page = main and main.PageUnit
+    local edit = GamepadActionBarEditFrame
+    Inspect("actionTooltip", edit and edit.ActionTooltip)
+    Inspect("main", main)
+    Inspect("page", page)
+    Inspect("edit", edit)
+    Inspect("focus", GamepadMode and GamepadMode.FrameControlsManager)
+    Inspect("mode", GamepadMode)
+    local manager = GamepadSharedUtility and GamepadSharedUtility.InputBindingManager
+    Inspect("bindings", manager)
+    Inspect("bindingStack", manager and manager.bindingSetStack)
+    Inspect("coreListeners", manager and manager.coreBindingListenerFunctions)
+    if page then
+        Inspect("bars", page.actionBars)
+        Inspect("overrides", page.overrideBars)
+        for name, bar in pairs(page.actionBars or {}) do
+            Inspect("bar." .. name, bar)
+            Inspect("bar." .. name .. ".Left", bar.Left)
+            Inspect("bar." .. name .. ".Right", bar.Right)
+            if bar.Right then Inspect("bar." .. name .. ".interact", bar.Right.ActionButton1) end
+        end
+    end
+    if edit then
+        Inspect("bindFooter", edit.bindingModeFooter)
+        Inspect("editFooter", edit.editModeFooter)
+    end
+    table.sort(fields)
+    return fields
+end
 diagnosticEvents:SetScript("OnEvent", function(_, event, addon, action)
     if type(ForeverTweaksDiagnostics) ~= "table" then
         ForeverTweaksDiagnostics = {}
@@ -362,6 +417,7 @@ diagnosticEvents:SetScript("OnEvent", function(_, event, addon, action)
         elapsed = GetTime(),
         combat = InCombatLockdown(),
         questShown = QuestFrame and QuestFrame:IsShown() or false,
+        nativeTaint = CaptureNativeTaint(),
         stack = debugstack(2, 16, 16),
     }
     if #entries > 20 then

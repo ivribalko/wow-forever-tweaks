@@ -176,12 +176,8 @@ local function Install()
         visibilityDriver:Show()
     end
     --@alpha@
-    hooksecurefunc(page, "RefreshActionBarVisibilities", function()
-        CapturePanelTransition("native-visibility")
-    end)
-    hooksecurefunc(page, "SetActiveActionBar", function()
-        CapturePanelTransition("native-selection")
-    end)
+    -- Observe native state through the existing sampler, not method hooks
+    -- read by UpdateActionBarFocusedState before its protected interact call.
     latch:HookScript("OnAttributeChanged", function(_, attribute, value)
         if attribute == "selected" or attribute == "left" or attribute == "right"
             or attribute == "enabled" or attribute == "state-combat"
@@ -200,10 +196,8 @@ local function Install()
     end)
     C_Timer.NewTicker(0.05, function() CapturePanelTransition("sample") end)
     --@end-alpha@
-    -- Queue a refresh after native slot updates and override activation finish.
-    hooksecurefunc(page.actionBars.stanceBar, "UpdateStanceBarState", function()
-        refreshPending = true
-    end)
+    -- Native form/slot events and the refresh loop observe stance changes
+    -- after native handlers complete, without replacing its method slots.
     -- Native stance buttons update their own spell slots in every form.
     latch:SetAttribute("_onstate-form", [[ self:RunAttribute("refresh") ]])
     latch:SetAttribute("_onstate-combat", [[ self:RunAttribute("refresh") ]])

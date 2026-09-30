@@ -3,7 +3,7 @@ local driver = CreateFrame("Frame")
 local owner, wheel, opener, cancel, remover
 local slots, selected, bindingPicker, initialized = {}, nil, false, false
 local fallbackBound, listening = false, false
-local pendingEntry, bindPrompt, bindLegend, pickerKey
+local pendingEntry, bindPrompt, pickerKey
 local ApplyWheelBindings, RefreshBindPrompt
 local SHARE = "PADBACK"
 local QUEST_SLOT = 3 -- The top sector in the native radial geometry.
@@ -19,7 +19,7 @@ local COMBAT_REFRESH = [[
     local menu = self:GetFrameRef("wheel")
     local blocked = not IsGamePadEnabled() or not self:GetAttribute("gamepad-ui")
     for i = 1, self:GetAttribute("blocker-count") do
-        if self:GetFrameRef("blocker-" .. i):IsVisible() then blocked = true end
+        if self:GetAttribute("blocker-" .. i) then blocked = true end
     end
     self:SetAttribute("combat-available", not blocked)
     self:ClearBindings()
@@ -136,19 +136,18 @@ local function DiscoverCombatBlockers()
         if chat then panel = chat.footer end
         if not panel or panel == wheel or panel == owner or combatBlockers[panel]
             or not panel.IsForbidden or panel:IsForbidden() then return end
-        local proxy = CreateFrame("Frame", nil, panel, "SecureHandlerBaseTemplate")
-        -- Native resize layouts must not include this visibility-only child.
-        proxy.ignoreInLayout = true
-        proxy:SetSize(1, 1)
-        proxy:SetPoint("TOPLEFT", panel, "TOPLEFT")
-        combatBlockers[panel] = proxy
+        -- Observe visibility without adding a protected child to a native
+        -- panel. The wrapper updates only addon-owned state; its native
+        -- script and frame fields remain under Blizzard's control.
+        combatBlockers[panel] = true
         local count = (owner:GetAttribute("blocker-count") or 0) + 1
         owner:SetAttribute("blocker-count", count)
-        owner:SetFrameRef("blocker-" .. count, proxy)
-        for _, script in ipairs({ "OnShow", "OnHide" }) do
-            SecureHandlerWrapScript(proxy, script, owner, [[ control:RunAttribute("combat-refresh") ]])
-        end
-        proxy:Show()
+        local attribute = "blocker-" .. count
+        owner:SetAttribute(attribute, panel:IsVisible())
+        SecureHandlerWrapScript(panel, "OnShow", owner,
+            'control:SetAttribute("' .. attribute .. '", true); control:RunAttribute("combat-refresh")')
+        SecureHandlerWrapScript(panel, "OnHide", owner,
+            'control:SetAttribute("' .. attribute .. '", false); control:RunAttribute("combat-refresh")')
     end
     for name in pairs(UIPanelWindows or {}) do Watch(_G[name]) end
     for _, name in ipairs(UISpecialFrames or {}) do Watch(_G[name]) end
@@ -544,67 +543,53 @@ OpenWheel = function(entry)
     ApplyWheelBindings()
 end
 
--- Append an independent visual inside the native hint panel. Only layout is
--- extended; native prompted-binding and input-stack tables remain untouched.
-local function LayoutBindPrompt()
-    if not bindPrompt or not bindPrompt:IsShown() or InCombatLockdown() then return end
-    local container = bindLegend.promptContainerFrame
-    local last
-    for _, key in ipairs(bindLegend.promptFramesAddOrder) do
-        local prompt = bindLegend.promptFrames[key]
-        if prompt:IsShown() then last = prompt end
-    end
-    local x, y = 10, -10
-    if last then
-        local _, _, _, lastX, lastY = last:GetPoint(1)
-        x, y = lastX + last:GetWidth() + 15, lastY
-    end
-    local width = x + bindPrompt:GetWidth() + 10
-    if bindLegend.wrapAroundRowWidth then
-        if width > container:GetWidth() then
-            x, y = 10, y - 35
-            local height = -y + 34
-            container:SetHeight(height)
-            bindLegend:SetHeight(height)
-            if bindLegend.modifierFrame then bindLegend.modifierFrame:SetHeight(height) end
-        end
-    else
-        local extra = width - container:GetWidth()
-        container:SetWidth(width)
-        bindLegend:SetWidth(bindLegend:GetWidth() + extra)
-    end
-    bindPrompt:ClearAllPoints()
-    bindPrompt:SetPoint("TOPLEFT", container, "TOPLEFT", x, y)
-end
-
+-- Draw the Bind hint without native prompt templates, registrations, children,
+-- or anchor dependencies. Only read the footer's screen bounds for placement.
 RefreshBindPrompt = function(entry)
     local source = GamepadActionBarEditFrame
     local footer = source and source.bindingModeFooter and source.bindingModeFooter.inputLegend
-    if not bindPrompt and footer and footer.promptContainerFrame then
-        bindLegend = footer
-        bindPrompt = CreateFrame("Frame", nil, footer.promptContainerFrame, "InputPromptOneIconWithTextTemplate")
+    if not bindPrompt and footer then
+        bindPrompt = CreateFrame("Frame", nil, UIParent)
+        bindPrompt:SetFrameStrata("DIALOG")
+        bindPrompt:SetSize(150, 44)
+        local background = bindPrompt:CreateTexture(nil, "BACKGROUND")
+        background:SetAllPoints()
+        background:SetAtlas("gamepad-footer-slot-bg")
+        local border = bindPrompt:CreateTexture(nil, "BORDER")
+        border:SetAllPoints()
+        border:SetAtlas("gamepad-footer-slot-frameneutral")
+        local icon = bindPrompt:CreateTexture(nil, "ARTWORK")
+        icon:SetSize(24, 24)
+        icon:SetPoint("LEFT", 10, 0)
+        bindPrompt.Icon = icon
+        local label = bindPrompt:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        label:SetPoint("LEFT", icon, "RIGHT", 5, 0)
+        label:SetText("Quick Menu")
+        bindPrompt:SetWidth(label:GetStringWidth() + 49)
         bindPrompt:Hide()
-        bindPrompt:SetPromptInputIconKey(1, GAMEPAD_MENU_LEFT)
-        bindPrompt:SetPromptText("Quick Menu")
-        bindPrompt:SetPromptFont("GameFontNormal")
-        bindPrompt:SetInputIconSize(1, 24, 24)
-        hooksecurefunc(footer, "ApplyDefaultPromptPositioning", LayoutBindPrompt)
-        source:HookScript("OnHide", function()
-            if pendingEntry and not InCombatLockdown() then wheel:Hide() end
-            RefreshBindings()
+        bindPrompt:SetScript("OnUpdate", function(self)
+            if InCombatLockdown() or not source:IsVisible() or not footer:IsVisible()
+                or wheel:IsShown() or source.activeMode ~= "BIND_ACTION" then
+                self:Hide()
+            end
         end)
-        -- These methods are inherited from the native mixin. Hooking them on
-        -- the instance creates addon-owned method slots used by later Bind
-        -- calls, tainting the native core-binding/interaction update. The
-        -- existing ticker discovers both transitions without replacing them.
     end
-    if bindPrompt then
-        local visible = entry ~= nil and not wheel:IsShown()
-        if bindPrompt:IsShown() ~= visible then
-            bindPrompt:SetShown(visible)
-            bindLegend:ApplyDefaultPromptPositioning()
+    if not bindPrompt then return end
+    local visible = entry ~= nil and not wheel:IsShown() and footer and footer:IsVisible()
+    if visible then
+        local right, top, bottom = footer:GetRight(), footer:GetTop(), footer:GetBottom()
+        if not right or not top or not bottom then visible = false else
+            local scale = footer:GetEffectiveScale() / UIParent:GetEffectiveScale()
+            bindPrompt:ClearAllPoints()
+            bindPrompt:SetPoint("LEFT", UIParent, "BOTTOMLEFT", right * scale + 8,
+                (top + bottom) * scale / 2)
+            -- This utility reads artwork without creating a native InputIcon
+            -- or registering in the shared icon manager's callback tables.
+            local atlas = InputIconTextureSetUtility.GetNormalActiveInputIconButtonTexture(GAMEPAD_MENU_LEFT)
+            if atlas then bindPrompt.Icon:SetAtlas(atlas) end
         end
     end
+    bindPrompt:SetShown(visible)
 end
 
 local function Texture(parent, key, atlas, layer, sublevel)
@@ -848,16 +833,8 @@ local function Initialize()
             wheel:EnableGamePadButton(false)
         end
     end)
-    -- Hooks only refresh our own bindings after native transitions complete.
-    local manager = GamepadMode and GamepadMode.FrameControlsManager
-    if manager then
-        for _, method in ipairs({ "FrameShown", "FrameHidden", "SetUIFocusState" }) do
-            hooksecurefunc(manager, method, RefreshBindings)
-        end
-    end
-    if GamepadRadial then GamepadRadial:HookScript("OnShow", function()
-        if not InCombatLockdown() then wheel:Hide(); RefreshBindings() end
-    end) end
+    -- The refresh loop observes native focus/radial transitions. Do not hook
+    -- native manager methods: Bind entry must keep its secure call chain.
     initialized = true
     RefreshSlots()
     DiscoverCombatBlockers()
