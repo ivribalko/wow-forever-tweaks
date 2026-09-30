@@ -1,5 +1,7 @@
 # Changelog
 
+- Added native cooldown fill and countdown text to quick-wheel item, ability, and resolved macro slots.
+
 - Fixed the protected SetID error with a secure selection sampler shared by combat and normal use. The last highlighted slot remains selected after recentering and activates on Share release in both modes.
 
 - Fixed combat quick-wheel blocking from idle IM chat by tracking native chat-focus footers instead of persistent chat windows and edit boxes.

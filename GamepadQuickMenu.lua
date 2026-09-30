@@ -264,6 +264,46 @@ local function GetEntryInfo(entry)
     end
 end
 
+-- Native cooldown widgets render countdowns without addon timer arithmetic.
+local function RefreshCooldowns()
+    if not wheel or not wheel:IsShown() then return end
+    for index, button in ipairs(slots) do
+        local entry = ForeverTweaksQuickMenu[index]
+        local spell, item
+        if entry then
+            if entry.kind == "spell" then
+                spell = GetEntryInfo(entry) -- Rankless name matches the wheel action.
+            elseif entry.kind == "item" then
+                item = entry.id
+            elseif entry.kind == "macro" then
+                local macro = ResolveMacro(entry)
+                if macro then
+                    spell = GetMacroSpell(macro)
+                    if not spell then
+                        local _, link = GetMacroItem(macro)
+                        item = link
+                    end
+                end
+            end
+        end
+        local cooldown = button.cooldown
+        if spell then
+            local info = C_Spell.GetSpellCooldown(spell)
+            if info then
+                -- Pass values directly; cooldown times may be restricted.
+                cooldown:SetCooldown(info.startTime, info.duration, info.modRate)
+            else
+                cooldown:Clear()
+            end
+        elseif item then
+            local start, duration = C_Item.GetItemCooldown(item)
+            cooldown:SetCooldown(start, duration)
+        else
+            cooldown:Clear()
+        end
+    end
+end
+
 local function SetAction(button, entry)
     button:SetAttribute("type1", nil)
     button:SetAttribute("spell", nil)
@@ -636,6 +676,17 @@ local function Initialize()
         -- Secure frames must anchor to frames, never texture regions.
         button:SetPoint("CENTER", wheel, "CENTER", anchor[1] + iconX, anchor[2] + iconY + 10)
         button.art = art
+        local cooldown = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
+        cooldown:ClearAllPoints()
+        cooldown:SetSize(38, 38)
+        cooldown:SetPoint("CENTER", button, "CENTER")
+        cooldown:EnableMouse(false)
+        cooldown:SetDrawSwipe(true)
+        cooldown:SetDrawEdge(false)
+        cooldown:SetDrawBling(false)
+        cooldown:SetHideCountdownNumbers(false)
+        cooldown:SetCountdownAbbrevThreshold(0)
+        button.cooldown = cooldown
         button:SetScript("OnEnter", function(self)
             if editing then SelectSlot(self:GetID()) end
             ShowTooltip(self)
@@ -734,6 +785,7 @@ local function Initialize()
     wheel:HookScript("OnShow", function()
         if InCombatLockdown() then editing = false; listening = true end
         SetFooter()
+        RefreshCooldowns()
     end)
     wheel:HookScript("OnHide", function()
         SetStickListening(false)
@@ -792,4 +844,5 @@ driver:SetScript("OnUpdate", function(_, delta)
     elapsed = 0
     if not initialized and IsLoggedIn() then Initialize() end
     RefreshBindings()
+    RefreshCooldowns()
 end)
