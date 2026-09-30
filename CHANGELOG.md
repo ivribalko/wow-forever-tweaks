@@ -1,5 +1,7 @@
 # Changelog
 
+- Moved the Share quick-menu hint inside the native bottom button-hints panel, including its background and row layout.
+
 - Added Share-to-wheel binding for native macros, with macro icons, secure activation, and saved identity resolution after macro index changes.
 
 - Added a Share quick-wheel destination to the native item/spell Bind menu, with right-stick slot selection, X assignment, Square removal, and controller editing from the wheel.

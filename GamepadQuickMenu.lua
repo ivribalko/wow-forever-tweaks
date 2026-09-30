@@ -3,7 +3,7 @@ local driver = CreateFrame("Frame")
 local owner, wheel, opener, confirm, cancel, editor
 local slots, selected, editing, initialized = {}, nil, false, false
 local fallbackBound, listening = false, false
-local pendingEntry, bindPrompt, editKey
+local pendingEntry, bindPrompt, bindLegend, editKey
 local ApplyWheelBindings, RefreshBindPrompt
 local SHARE = "PADBACK"
 local OPEN_BINDING = "CLICK ForeverTweaksQuickMenuOpen:LeftButton"
@@ -303,18 +303,51 @@ OpenWheel = function(editMode, entry)
     ApplyWheelBindings()
 end
 
--- An independent native-style prompt avoids inserting addon callbacks into
--- Blizzard's shared footer or binding-stack tables.
+-- Append an independent visual inside the native hint panel. Only layout is
+-- extended; native prompted-binding and input-stack tables remain untouched.
+local function LayoutBindPrompt()
+    if not bindPrompt or not bindPrompt:IsShown() or InCombatLockdown() then return end
+    local container = bindLegend.promptContainerFrame
+    local last
+    for _, key in ipairs(bindLegend.promptFramesAddOrder) do
+        local prompt = bindLegend.promptFrames[key]
+        if prompt:IsShown() then last = prompt end
+    end
+    local x, y = 10, -10
+    if last then
+        local _, _, _, lastX, lastY = last:GetPoint(1)
+        x, y = lastX + last:GetWidth() + 15, lastY
+    end
+    local width = x + bindPrompt:GetWidth() + 10
+    if bindLegend.wrapAroundRowWidth then
+        if width > container:GetWidth() then
+            x, y = 10, y - 35
+            local height = -y + 34
+            container:SetHeight(height)
+            bindLegend:SetHeight(height)
+            if bindLegend.modifierFrame then bindLegend.modifierFrame:SetHeight(height) end
+        end
+    else
+        local extra = width - container:GetWidth()
+        container:SetWidth(width)
+        bindLegend:SetWidth(bindLegend:GetWidth() + extra)
+    end
+    bindPrompt:ClearAllPoints()
+    bindPrompt:SetPoint("TOPLEFT", container, "TOPLEFT", x, y)
+end
+
 RefreshBindPrompt = function(entry)
     local source = GamepadActionBarEditFrame
-    if not bindPrompt and source and source.BindingInfoFrame then
-        bindPrompt = CreateFrame("Frame", nil, source.BindingInfoFrame, "InputPromptOneIconWithTextTemplate")
-        local footer = source.bindingModeFooter and source.bindingModeFooter.inputLegend
-        bindPrompt:SetPoint("TOPLEFT", footer or source.BindingInfoFrame, "BOTTOMLEFT", 0, footer and -8 or -50)
+    local footer = source and source.bindingModeFooter and source.bindingModeFooter.inputLegend
+    if not bindPrompt and footer and footer.promptContainerFrame then
+        bindLegend = footer
+        bindPrompt = CreateFrame("Frame", nil, footer.promptContainerFrame, "InputPromptOneIconWithTextTemplate")
+        bindPrompt:Hide()
         bindPrompt:SetPromptInputIconKey(1, GAMEPAD_MENU_LEFT)
         bindPrompt:SetPromptText("Quick Menu")
         bindPrompt:SetPromptFont("GameFontNormal")
-        bindPrompt:SetInputIconSize(1, 20, 20)
+        bindPrompt:SetInputIconSize(1, 24, 24)
+        hooksecurefunc(footer, "ApplyDefaultPromptPositioning", LayoutBindPrompt)
         source:HookScript("OnHide", function()
             if pendingEntry and not InCombatLockdown() then wheel:Hide() end
             RefreshBindings()
@@ -322,7 +355,13 @@ RefreshBindPrompt = function(entry)
         hooksecurefunc(source, "EnterBindingMode", RefreshBindings)
         hooksecurefunc(source, "ExitBindingMode", RefreshBindings)
     end
-    if bindPrompt then bindPrompt:SetShown(entry ~= nil and not wheel:IsShown()) end
+    if bindPrompt then
+        local visible = entry ~= nil and not wheel:IsShown()
+        if bindPrompt:IsShown() ~= visible then
+            bindPrompt:SetShown(visible)
+            bindLegend:ApplyDefaultPromptPositioning()
+        end
+    end
 end
 
 local function Texture(parent, key, atlas, layer, sublevel)
