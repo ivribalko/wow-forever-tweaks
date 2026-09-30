@@ -1,5 +1,7 @@
 # Changelog
 
+- Restored the Quick Menu hint inside the native Bind bottom panel as an unprotected visual-only child, with polling for background bounds and no native layout hooks.
+
 - Re-enabled the quick wheel with secure visibility flags instead of protected proxy children attached to native panels.
 
 - Replaced the Bind hint’s native prompt template with plain addon-owned artwork and screen-coordinate placement, removing native icon callback registration and footer anchor dependencies.

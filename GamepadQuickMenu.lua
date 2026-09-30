@@ -543,52 +543,64 @@ OpenWheel = function(entry)
     ApplyWheelBindings()
 end
 
--- Draw the Bind hint without native prompt templates, registrations, children,
--- or anchor dependencies. Only read the footer's screen bounds for placement.
+-- Append a visual-only child to the native panel. It has no secure template
+-- and never joins native prompt/binding tables or hooks a legend method.
 RefreshBindPrompt = function(entry)
     local source = GamepadActionBarEditFrame
     local footer = source and source.bindingModeFooter and source.bindingModeFooter.inputLegend
-    if not bindPrompt and footer then
-        bindPrompt = CreateFrame("Frame", nil, UIParent)
-        bindPrompt:SetFrameStrata("DIALOG")
-        bindPrompt:SetSize(150, 44)
-        local background = bindPrompt:CreateTexture(nil, "BACKGROUND")
-        background:SetAllPoints()
-        background:SetAtlas("gamepad-footer-slot-bg")
-        local border = bindPrompt:CreateTexture(nil, "BORDER")
-        border:SetAllPoints()
-        border:SetAtlas("gamepad-footer-slot-frameneutral")
+    local container = footer and footer.promptContainerFrame
+    if not container then return end
+    if not bindPrompt then
+        bindPrompt = CreateFrame("Frame", nil, container)
+        bindPrompt.ignoreInLayout = true
+        bindPrompt:SetSize(150, 24)
         local icon = bindPrompt:CreateTexture(nil, "ARTWORK")
         icon:SetSize(24, 24)
-        icon:SetPoint("LEFT", 10, 0)
+        icon:SetPoint("LEFT")
         bindPrompt.Icon = icon
         local label = bindPrompt:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         label:SetPoint("LEFT", icon, "RIGHT", 5, 0)
         label:SetText("Quick Menu")
-        bindPrompt:SetWidth(label:GetStringWidth() + 49)
+        bindPrompt:SetWidth(label:GetStringWidth() + 29)
         bindPrompt:Hide()
-        bindPrompt:SetScript("OnUpdate", function(self)
-            if InCombatLockdown() or not source:IsVisible() or not footer:IsVisible()
-                or wheel:IsShown() or source.activeMode ~= "BIND_ACTION" then
-                self:Hide()
-            end
-        end)
     end
-    if not bindPrompt then return end
-    local visible = entry ~= nil and not wheel:IsShown() and footer and footer:IsVisible()
-    if visible then
-        local right, top, bottom = footer:GetRight(), footer:GetTop(), footer:GetBottom()
-        if not right or not top or not bottom then visible = false else
-            local scale = footer:GetEffectiveScale() / UIParent:GetEffectiveScale()
-            bindPrompt:ClearAllPoints()
-            bindPrompt:SetPoint("LEFT", UIParent, "BOTTOMLEFT", right * scale + 8,
-                (top + bottom) * scale / 2)
-            -- This utility reads artwork without creating a native InputIcon
-            -- or registering in the shared icon manager's callback tables.
-            local atlas = InputIconTextureSetUtility.GetNormalActiveInputIconButtonTexture(GAMEPAD_MENU_LEFT)
-            if atlas then bindPrompt.Icon:SetAtlas(atlas) end
+    local visible = entry ~= nil and not wheel:IsShown() and footer:IsVisible()
+    -- Derive native bounds from its own prompts, rather than the dimensions
+    -- extended on the previous tick. Native refreshes may relayout at any time.
+    local last, right, bottom = nil, 10, 34
+    for _, key in ipairs(footer.promptFramesAddOrder) do
+        local prompt = footer.promptFrames[key]
+        if prompt:IsShown() then
+            local _, _, _, x, y = prompt:GetPoint(1)
+            right = math.max(right, x + prompt:GetWidth() + 10)
+            bottom = math.max(bottom, -y + 34)
+            last = prompt
         end
     end
+    local width = footer.wrapAroundRowWidth and container:GetWidth() or right
+    local height = bottom
+    if visible then
+        local x, y = 10, -10
+        if last then
+            local _, _, _, lastX, lastY = last:GetPoint(1)
+            x, y = lastX + last:GetWidth() + 15, lastY
+        end
+        if footer.wrapAroundRowWidth and x + bindPrompt:GetWidth() + 10 > width then
+            x, y = 10, y - 35
+        end
+        if not footer.wrapAroundRowWidth then width = x + bindPrompt:GetWidth() + 10 end
+        height = math.max(height, -y + 34)
+        bindPrompt:ClearAllPoints()
+        bindPrompt:SetPoint("TOPLEFT", container, "TOPLEFT", x, y)
+        local atlas = InputIconTextureSetUtility.GetNormalActiveInputIconButtonTexture(GAMEPAD_MENU_LEFT)
+        if atlas then bindPrompt.Icon:SetAtlas(atlas) end
+    end
+    container:SetSize(width, height)
+    footer:SetHeight(height)
+    if not footer.wrapAroundRowWidth then
+        footer:SetWidth(width + (footer.modifierFrame and footer.modifierFrame:GetWidth() or 0))
+    end
+    if footer.modifierFrame then footer.modifierFrame:SetHeight(height) end
     bindPrompt:SetShown(visible)
 end
 
