@@ -447,8 +447,12 @@ ApplyWheelBindings = function()
     -- The edit wheel consumes gamepad input above Blizzard's raw binding
     -- listener. Its X/Square presses must never also rebind an action-bar slot.
     wheel:EnableGamePadButton(editing)
-    if not editing then
+    -- Preserve the opener's release route during a native Bind-menu hold.
+    -- Raw edit input was enabled after Share down and may miss its release.
+    if not editing or pendingEntry then
         SetOverrideBindingClick(wheel, true, SHARE, opener:GetName(), "LeftButton")
+    end
+    if not editing then
         for _, key in ipairs({ "PAD2" }) do
             SetOverrideBindingClick(wheel, true, key, cancel:GetName(), "LeftButton")
         end
@@ -771,18 +775,15 @@ local function Initialize()
     end)
     wheel:SetScript("OnGamePadButtonDown", function(_, key)
         if not editing or not wheel:IsShown() then return true end
+        if key == SHARE and pendingEntry then return true end
         editKey = key
         return false
     end)
     wheel:SetScript("OnGamePadButtonUp", function(_, key)
         if not editing or not wheel:IsShown() then return true end
         if InCombatLockdown() then return false end
-        -- The opening Share down reached the opener before this raw listener
-        -- was enabled, so its matching release has no editKey to compare.
-        if key == SHARE and pendingEntry then
-            FinishBinding()
-            return false
-        end
+        -- Let the preserved click binding complete the original Share hold.
+        if key == SHARE and pendingEntry then return true end
         if editKey ~= key then return false end
         editKey = nil
         -- Finish on release so returning to native bindings cannot replay the

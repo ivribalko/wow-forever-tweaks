@@ -1,5 +1,7 @@
 # Changelog
 
+- Preserved the Share click binding throughout slot assignment so releasing the opening hold assigns and closes the picker.
+
 - Changed quick-wheel binding to hold Share, aim at a slot, and release Share to assign without X; recentering retains selection and Circle cancels.
 
 - Added native cooldown fill and countdown text to quick-wheel item, ability, and resolved macro slots.
