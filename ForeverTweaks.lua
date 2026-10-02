@@ -288,6 +288,8 @@ local gamepadSettings = CreateFrame("Frame")
 gamepadSettings:RegisterEvent("PLAYER_LOGIN")
 gamepadSettings:SetScript("OnEvent", function(self)
     C_CVar.SetCVar("groundEffectDensity", "250")
+    -- Request the extended Classic zoom limit; the client enforces its cap.
+    C_CVar.SetCVar("cameraDistanceMaxZoomFactor", "4")
     -- Native nameplate range is shared by enemy and enabled friendly plates.
     C_CVar.SetCVar("nameplateMaxDistance", "60")
     C_CVar.SetCVar("nameplatePlayerMaxDistance", "60")

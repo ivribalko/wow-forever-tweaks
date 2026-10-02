@@ -10,6 +10,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 - Shows action-button cooldown timers as a single value with native units instead of minutes and seconds together.
 - Sets ground-effect density to 250 at login and UI reload.
+- Requests the maximum camera zoom distance with `cameraDistanceMaxZoomFactor = 4` at login and UI reload, subject to the client limit.
 - Sets NPC and player nameplate view distance to 60 yards at login and UI reload, subject to the client's range limit.
 - Adds a small reload button beside the compact action-bar toggle in a centered row below the minimap.
 - Adds a small icon below the minimap to toggle the native Use Compact Action Bar gamepad setting outside combat.
@@ -38,6 +39,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Captures protected-action failures with native field taint ownership and up to 20 quick-menu routing and mapped-button state changes in source and alpha packages for troubleshooting, without controller-panel method hooks.
 
 ## Usage
+
+- Sets `cameraDistanceMaxZoomFactor` to `4` at login and UI reload to request the extended camera zoom limit. Scroll out to use it; the addon does not force the current zoom. The Forever client may cap the accepted value or distance; in-game validation is pending.
 
 - Sets `groundEffectDensity` to `250` at login and UI reload. The client may enforce its supported range; in-game validation is pending.
 
