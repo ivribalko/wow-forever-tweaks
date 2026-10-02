@@ -4,6 +4,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
+- Adds one-second native error-message suppression to the supported food and drink consume/conjure macros, preserving their item order, spell fallback, names, icons, and quick-wheel references.
+
 - Keeps addon operations silent in chat, including quick-wheel assignment, capacity warnings, slash-command responses, and quest-order rejection notices.
 
 - Adds an eight-slot item, ability, and macro quick wheel on the left, mirroring the native right-hand menu’s position and using its radial artwork, without FullscreenMenus centering or backdrop. Secure visibility wrappers maintain addon-owned blocker flags without adding protected children to native panels or changing native layout. Share opens it in and out of combat when native interfaces do not need the button, including when Share has no action binding, including over the collapsed party/raid-controls Share binding, including while IM chat is idle; the native item/spell/macro Bind menu uses hold Share, aim, and release to assign wheel slots and close the picker without X, and Square in the normal wheel removes entries saved per character. Bind and focus transitions are discovered without native method hooks; its plain addon-owned Quick Menu hint stays visible inside the bottom panel while holding Share and choosing a slot, with polling that extends the background bounds without native prompt templates, callback registration, or layout-method hooks. Hold Share, aim the right stick, and release Share to activate; the last selection stays highlighted when the stick recenters, release activates that retained selection in and out of combat, and X does not activate. The top slot is reserved for the selected tracked quest’s usable item and shows a dimmed quest exclamation icon when empty, with a reserved bottom Leave Party slot and six customizable slots; quest-item changes wait until combat ends. The normal wheel shows the native square-button icon with Remove, dimmed in combat; standalone edit mode is removed. Slot icons show native cooldown fill and text for items, abilities, and macros with a resolved spell or item.
@@ -39,6 +41,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Captures protected-action failures with native field taint ownership and up to 20 quick-menu routing and mapped-button state changes in source and alpha packages for troubleshooting, without controller-panel method hooks.
 
 ## Usage
+
+- The existing Conjure Food and Conjure Water item-use macros receive `/run ForeverTweaksSuppressFoodErrors()` on login or macro changes, outside combat with an empty cursor. Only the exact supported item lists and spell fallback are matched. Each press pauses native error messages and their associated sounds for one second to cover delayed server rejections, including standing requirements. Repeated presses extend the window; unrelated errors during that second are also suppressed. Audio settings remain unchanged; sounds outside the native error-message handler are not suppressed. Normal error handling is restored afterward. Account macro edits apply across characters. In-game validation is pending.
 
 - Sets `cameraDistanceMaxZoomFactor` to `4` at login and UI reload to request the extended camera zoom limit. Scroll out to use it; the addon does not force the current zoom. The Forever client may cap the accepted value or distance; in-game validation is pending.
 

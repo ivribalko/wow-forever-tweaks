@@ -22,3 +22,4 @@ PlayerFrameXP.lua
 ProfessionTooltip.lua
 MacroRanks.lua
 AttackMacros.lua
+FoodDrinkMacros.lua
