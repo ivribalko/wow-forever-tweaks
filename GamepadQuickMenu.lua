@@ -54,7 +54,7 @@ local COMBAT_STATE = [[
         menu:Hide()
     end
 ]]
--- The native state-driver tick samples input securely in and out of combat.
+-- The native state-driver tick samples input securely each frame while open.
 -- Keep the highlight and release action on this same retained selection.
 local SAMPLE_SELECTION = [[
     local menu = self:GetFrameRef("wheel")
@@ -684,6 +684,7 @@ local function Initialize()
     wheel:SetFrameStrata("DIALOG")
     wheel:SetClampedToScreen(true)
     owner:SetFrameRef("wheel", wheel)
+    wheel:SetFrameRef("state-driver", SecureStateDriverManager)
     owner:SetAttribute("blocker-count", 0)
     owner:SetAttribute("camera-stick", 2)
     owner.PaintSelection = function(_, index) SelectSlot(index) end
@@ -693,6 +694,9 @@ local function Initialize()
     owner:SetAttribute("_onstate-combat", COMBAT_STATE)
     wheel:SetFrameRef("owner", owner)
     wheel:SetAttribute("_onshow", [[
+        local driver = self:GetFrameRef("state-driver")
+        self:SetAttribute("previous-update-interval", driver:GetAttribute("updatetime") or 0.2)
+        driver:SetAttribute("updatetime", 0)
         local owner = self:GetFrameRef("owner")
         owner:SetAttribute("selected-slot", nil)
         owner:CallMethod("PaintSelection")
@@ -704,6 +708,11 @@ local function Initialize()
         end
     ]])
     wheel:SetAttribute("_onhide", [[
+        local driver = self:GetFrameRef("state-driver")
+        if driver:GetAttribute("updatetime") == 0 then
+            driver:SetAttribute("updatetime", self:GetAttribute("previous-update-interval") or 0.2)
+        end
+        self:SetAttribute("previous-update-interval", nil)
         local opener = self:GetFrameRef("owner"):GetFrameRef("opener")
         if opener then
             opener:SetAttribute("hold-armed", nil)
