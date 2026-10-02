@@ -9,6 +9,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Adds an eight-slot item, ability, and macro quick wheel on the left, mirroring the native right-hand menu’s position and using its radial artwork, without FullscreenMenus centering or backdrop. Secure visibility wrappers maintain addon-owned blocker flags without adding protected children to native panels or changing native layout. Share opens it in and out of combat when native interfaces do not need the button, including when Share has no action binding, including over the collapsed party/raid-controls Share binding, including while IM chat is idle; the native item/spell/macro Bind menu uses hold Share, aim, and release to assign wheel slots and close the picker without X, and Square in the normal wheel removes entries saved per character. Bind and focus transitions are discovered without native method hooks; its plain addon-owned Quick Menu hint stays visible inside the bottom panel while holding Share and choosing a slot, with polling that extends the background bounds without native prompt templates, callback registration, or layout-method hooks. Hold Share, aim the right stick, and release Share to activate; the last selection stays highlighted when the stick recenters, release activates that retained selection in and out of combat, and X does not activate. The top slot is reserved for the selected tracked quest’s usable item and shows a dimmed quest exclamation icon when empty, with a reserved bottom Leave Party slot and six customizable slots; quest-item changes wait until combat ends. The normal wheel shows the native square-button icon with Remove, dimmed in combat; standalone edit mode is removed. Slot icons show native cooldown fill and text for items, abilities, and macros with a resolved spell or item.
 
 - Shows action-button cooldown timers as a single value with native units instead of minutes and seconds together.
+- Sets ground-effect density to 250 at login and UI reload.
 - Sets NPC and player nameplate view distance to 60 yards at login and UI reload, subject to the client's range limit.
 - Adds a small reload button beside the compact action-bar toggle in a centered row below the minimap.
 - Adds a small icon below the minimap to toggle the native Use Compact Action Bar gamepad setting outside combat.
@@ -37,6 +38,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Captures protected-action failures with native field taint ownership and up to 20 quick-menu routing and mapped-button state changes in source and alpha packages for troubleshooting, without controller-panel method hooks.
 
 ## Usage
+
+- Sets `groundEffectDensity` to `250` at login and UI reload. The client may enforce its supported range; in-game validation is pending.
 
 - Nameplate view distance requests 60 yards for NPCs and players at login and UI reload. The native distance settings also affect friendly nameplates when enabled; nameplate visibility preferences remain unchanged. The client may enforce a lower range limit. In-game validation is pending.
 

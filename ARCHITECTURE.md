@@ -25,6 +25,7 @@
 - At login, `C_CVar.SetCVar` disables `GamepadShowAutoAuraTooltip`. Blizzard then skips its automatic aura-popup queue. No aura data is read or native queue mutated, and manual tooltip inspection remains available. The CVar persists in client settings.
 - The same login handler disables `GamePadTouchCursorEnable`, leaving touchpad cursor movement to an external native-mouse mapper. This persistent native setting is separate from device button mappings.
 - The same login handler sets `GamePadFactionColor` to `0`.
+- The login handler also sets `groundEffectDensity` to `250` through `C_CVar.SetCVar`, including UI reloads.
 - The same login handler requests 60-yard NPC and player nameplate ranges through `nameplateMaxDistance` and `nameplatePlayerMaxDistance`. The client enforces its range limits; these native settings also affect enabled friendly plates.
 - The same login handler sets `GamepadDisableTooltips` to `0`, preventing native `GameTooltip_OnShow` from hiding item tooltips in focused controller menus.
 - The login handler attempts to set `GamePadOverlapMouseMs` to `0` for mapped mouse movement. This currently does not work: the effective value remains `2000` despite a successful write; the cause is unconfirmed.
