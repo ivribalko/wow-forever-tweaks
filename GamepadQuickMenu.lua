@@ -81,7 +81,7 @@ local SELECTION_TICK = [[
 local SHARE_HOLD = [[
     local menu = control:GetFrameRef("wheel")
     self:SetAttribute("type1", nil)
-    self:SetAttribute("clickbutton", nil)
+    self:SetAttribute("leave-group", nil)
     if down then
         self:SetAttribute("hold-armed", nil)
         self:SetAttribute("bind-press", nil)
@@ -115,7 +115,7 @@ local SHARE_HOLD = [[
         self:SetAttribute("spell", slot:GetAttribute("spell"))
         self:SetAttribute("item", slot:GetAttribute("item"))
         self:SetAttribute("macro", slot:GetAttribute("macro"))
-        self:SetAttribute("clickbutton", slot:GetAttribute("clickbutton"))
+        if slot:GetAttribute("leave-group") then return nil, "leave-group" end
         self:SetAttribute("type1", slot:GetAttribute("saved-type"))
     end
     return nil, "close"
@@ -214,7 +214,9 @@ end
 -- as core. Identify the actual top Share owner, since native function bindings
 -- share the same CLICK button name across different interfaces.
 local function ShareFallbackAvailable(action)
-    if action == "TOGGLEUIFOCUS" or action == OPEN_BINDING then return true end
+    -- A mapped Share button can have no base action. WorldIsClear still
+    -- gates this fallback so native focused interfaces retain priority.
+    if action == "" or action == "TOGGLEUIFOCUS" or action == OPEN_BINDING then return true end
     local raid = CompactRaidFrameManager
     if not raid or not raid.expandFrame or not raid.collapsed then return false end
     local manager = GamepadSharedUtility.InputBindingManager
@@ -387,13 +389,12 @@ local function SetAction(button, entry)
     button:SetAttribute("spell", nil)
     button:SetAttribute("item", nil)
     button:SetAttribute("macro", nil)
-    button:SetAttribute("clickbutton", nil)
+    button:SetAttribute("leave-group", nil)
     button:SetAttribute("saved-type", nil)
     if not entry then return end
     if entry.kind == "leave-group" then
         if IsInGroup() then
-            button:SetAttribute("clickbutton", ForeverTweaksLeaveGroupRequest)
-            button:SetAttribute("type1", "click")
+            button:SetAttribute("leave-group", true)
         end
     elseif entry.kind == "spell" then
         -- Rankless spell names follow the highest learned rank.
@@ -446,7 +447,7 @@ local function ShowTooltip(button)
     GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
     if entry and entry.kind == "leave-group" then
         GameTooltip:SetText(PARTY_LEAVE or "Leave Party")
-        GameTooltip:AddLine(IsInGroup() and "Opens a leave-group confirmation." or "Unavailable while solo.", 1, 1, 1, true)
+        GameTooltip:AddLine(IsInGroup() and "Leaves your group immediately." or "Unavailable while solo.", 1, 1, 1, true)
     elseif entry and entry.kind == "spell" then
         GameTooltip:SetSpellByID(entry.id)
     elseif entry and entry.kind == "item" then
@@ -803,6 +804,7 @@ local function Initialize()
     opener:RegisterForClicks("AnyDown", "AnyUp")
     opener:SetAttribute("useOnKeyDown", false)
     owner:SetFrameRef("opener", opener)
+    owner:SetFrameRef("leave-request", ForeverTweaksLeaveGroupRequest)
     owner.FinishBinding = FinishBinding
     owner.OpenFromShare = function()
         if InCombatLockdown() then return end
@@ -814,9 +816,13 @@ local function Initialize()
             control:CallMethod("OpenFromShare")
         elseif message == "assign" then
             control:CallMethod("FinishBinding")
-        elseif message == "close" then
+        elseif message == "close" or message == "leave-group" then
             control:GetFrameRef("wheel"):Hide()
             self:SetAttribute("type1", nil)
+            -- Close before leaving so roster changes refresh a closed wheel.
+            if message == "leave-group" then
+                control:GetFrameRef("leave-request"):CallMethod("LeaveParty")
+            end
         end
     ]])
     cancel = CreateFrame("Button", "ForeverTweaksQuickMenuClose", wheel, "SecureHandlerClickTemplate")
@@ -918,6 +924,62 @@ driver:SetScript("OnEvent", function(_, event)
     if event == "PLAYER_LOGIN" or event == "PLAYER_REGEN_ENABLED" or IsLoggedIn() then Initialize() end
     if initialized then RefreshSlots(); RefreshBindings(); SetFooter() end
 end)
+--@alpha@
+-- Keep only state changes so a persisted capture explains silent Share failures.
+local lastRoutingState
+local function CaptureShareRouting()
+    local focus = GamepadMode and GamepadMode.FrameControlsManager
+    local manager = GamepadSharedUtility and GamepadSharedUtility.InputBindingManager
+    local state = {
+        "initialized=" .. tostring(initialized),
+        "owner=" .. tostring(owner ~= nil),
+        "gamepad=" .. tostring(C_GamePad.IsEnabled()),
+        "ui=" .. tostring(InputUtil and InputUtil.IsGamepadUIEnabled()),
+        "combat=" .. tostring(InCombatLockdown()),
+        "action=" .. tostring(GetBindingAction(SHARE, true)),
+        "fallback=" .. tostring(fallbackBound),
+        "wheel=" .. tostring(wheel and wheel:IsShown()),
+        "focused=" .. tostring(focus and focus.isUIFocused),
+        "keyboard=" .. tostring(GetCurrentKeyBoardFocus() ~= nil),
+        "core=" .. tostring(manager and manager:IsOnlyCoreBindingSetActive()),
+        "cinematic=" .. tostring(InCinematic() or IsInCinematicScene()),
+    }
+    for _, panel in ipairs(focus and focus.shownFrames or {}) do
+        state[#state + 1] = "focus-frame=" .. (panel:GetName() or "anonymous")
+    end
+    for _, set in ipairs(manager and manager.bindingSetStack or {}) do
+        state[#state + 1] = "binding-set=" .. tostring(set.name)
+    end
+    if owner then
+        state[#state + 1] = "armed=" .. tostring(opener and opener:GetAttribute("hold-armed"))
+        for panel in pairs(combatBlockers) do
+            if panel:IsVisible() then
+                state[#state + 1] = "visible-blocker=" .. (panel:GetName() or "anonymous")
+            end
+        end
+        for i = 1, owner:GetAttribute("blocker-count") or 0 do
+            if owner:GetAttribute("blocker-" .. i) then
+                state[#state + 1] = "secure-blocker=" .. i
+            end
+        end
+    end
+    local mapped = C_GamePad.GetDeviceMappedState()
+    for index, pressed in ipairs(mapped and mapped.buttons or {}) do
+        if pressed then
+            state[#state + 1] = "pressed=" .. tostring(C_GamePad.ButtonIndexToBinding(index - 1))
+        end
+    end
+    table.sort(state)
+    local routing = table.concat(state, "; ")
+    if routing == lastRoutingState then return end
+    lastRoutingState = routing
+    if type(ForeverTweaksDiagnostics) ~= "table" then ForeverTweaksDiagnostics = {} end
+    local entries = ForeverTweaksDiagnostics.quickMenuRouting or {}
+    ForeverTweaksDiagnostics.quickMenuRouting = entries
+    entries[#entries + 1] = { elapsed = GetTime(), state = routing }
+    if #entries > 20 then table.remove(entries, 1) end
+end
+--@end-alpha@
 local elapsed = 0
 driver:SetScript("OnUpdate", function(_, delta)
     elapsed = elapsed + delta
@@ -926,4 +988,8 @@ driver:SetScript("OnUpdate", function(_, delta)
     if not initialized and IsLoggedIn() then Initialize() end
     RefreshBindings()
     RefreshCooldowns()
+    --@alpha@
+    -- Diagnostics must never prevent the normal binding refresh from running.
+    pcall(CaptureShareRouting)
+    --@end-alpha@
 end)

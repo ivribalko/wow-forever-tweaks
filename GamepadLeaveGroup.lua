@@ -1,17 +1,7 @@
--- Offers target invitations in shortcuts and native leave confirmation for the wheel.
+-- Offers target invitations in shortcuts and immediate group leaving for the wheel.
 local driver = CreateFrame("Frame")
 local shortcuts, prompt, promptAnchor
 local buttonPending = true
-local confirmationData
-
--- Do not add a dialog definition to StaticPopupDialogs: native gamepad popup
--- initialization reads that definition before updating protected focus state.
-local function HideConfirmation()
-    local data = confirmationData
-    confirmationData = nil
-    if data then securecallfunction(StaticPopup_Hide, "GENERIC_CONFIRMATION", data) end
-end
-
 -- The shortcut only invites friendly players outside the current group.
 local function GetInviteTarget()
     local player = UnitIsPlayer("target")
@@ -29,32 +19,14 @@ local function GetInviteTarget()
     return false
 end
 
-local function ShowConfirmation()
-    if confirmationData or not IsInGroup() then return end
-    local data = {
-        text = "Leave your current group?",
-        acceptText = YES,
-        cancelText = CANCEL,
-    }
-    data.callback = function()
-        if confirmationData ~= data then return end
-        confirmationData = nil
-        if IsInGroup() then C_PartyInfo.LeaveParty() end
-    end
-    data.cancelCallback = function()
-        if confirmationData == data then confirmationData = nil end
-    end
-    confirmationData = data
-    -- Use the native GENERIC_CONFIRMATION definition and controller lifecycle.
-    -- The boundary alone was insufficient with an addon-owned definition.
-    securecallfunction(StaticPopup_ShowCustomGenericConfirmation, data)
+local function LeaveParty()
+    if IsInGroup() then C_PartyInfo.ConfirmLeaveParty() end
 end
 
--- Secure wheel slots click this addon-owned button; confirmation stays native.
+-- Secure Share release calls this addon-owned method after closing the wheel.
 local leaveRequest = CreateFrame("Button", "ForeverTweaksLeaveGroupRequest", UIParent)
 leaveRequest:EnableMouse(false)
-leaveRequest:RegisterForClicks("AnyUp")
-leaveRequest:SetScript("OnClick", ShowConfirmation)
+leaveRequest.LeaveParty = LeaveParty
 
 local function OnInviteClick(_, _, down)
     -- Both-shoulder mode already cancels native targeting. Do not write its
@@ -137,8 +109,6 @@ driver:RegisterEvent("PLAYER_TARGET_CHANGED")
 driver:RegisterEvent("UNIT_FACTION")
 driver:SetScript("OnEvent", function(_, event)
     if event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_TARGET_CHANGED" or event == "UNIT_FACTION" then
-        -- Dismiss stale confirmations when the roster or selected action changes.
-        HideConfirmation()
         buttonPending = true
         if prompt then RefreshPrompt(prompt) end
     end
