@@ -1,6 +1,28 @@
 -- Supplement world-map flight points without changing taxi discovery or travel.
 local pinTemplate = "FlightPointPinTemplate"
 local hookedProviders = setmetatable({}, { __mode = "k" })
+local menuInstalled = false
+
+local function FlightPointsEnabled()
+    return ForeverTweaksFlightPointsEnabled ~= false
+end
+
+local function ToggleFlightPoints()
+    ForeverTweaksFlightPointsEnabled = not FlightPointsEnabled()
+    for provider in pairs(hookedProviders) do
+        provider:RefreshAllData()
+    end
+end
+
+local function InstallFlightPointMenu()
+    if menuInstalled or not Menu or type(Menu.ModifyMenu) ~= "function" then
+        return
+    end
+    menuInstalled = true
+    Menu.ModifyMenu("MENU_WORLD_MAP_TRACKING", function(_, rootDescription)
+        rootDescription:CreateCheckbox("Flight Points", FlightPointsEnabled, ToggleFlightPoints)
+    end)
+end
 
 local function UpdateIcon(pin)
     if pin.Texture then
@@ -12,6 +34,10 @@ end
 local function AddMissingFlightPoints(provider)
     local map = provider:GetMap()
     if map ~= WorldMapFrame then
+        return
+    end
+    if not FlightPointsEnabled() then
+        map:RemoveAllPinsByTemplate(pinTemplate)
         return
     end
     local mapID = map:GetMapID()
@@ -51,6 +77,7 @@ local function AddMissingFlightPoints(provider)
 end
 
 local function InstallFlightPoints()
+    InstallFlightPointMenu()
     if not WorldMapFrame or not WorldMapFrame.dataProviders
         or not FlightPointDataProviderMixin or not C_TaxiMap
         or type(C_TaxiMap.GetTaxiNodesForMap) ~= "function" then
@@ -75,7 +102,8 @@ local events = CreateFrame("Frame")
 events:RegisterEvent("PLAYER_LOGIN")
 events:RegisterEvent("ADDON_LOADED")
 events:SetScript("OnEvent", function(_, event, addonName)
-    if event == "PLAYER_LOGIN" or addonName == "Blizzard_WorldMap" then
+    if event == "PLAYER_LOGIN" or addonName == "Blizzard_WorldMap"
+        or addonName == "Blizzard_Menu" then
         InstallFlightPoints()
     end
 end)

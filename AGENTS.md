@@ -4,7 +4,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
-- Shows faction-appropriate and neutral world-map flight points supplied by the client even when the native flight-point layer is hidden, with undiscovered icons dimmed. Does not unlock travel; locations withheld by the client cannot be displayed.
+- Shows faction-appropriate and neutral world-map flight points supplied by the client even when the native flight-point layer is hidden, with undiscovered icons dimmed. The map filter menu includes a Flight Points checkbox, enabled by default and saved account-wide. Does not unlock travel; locations withheld by the client cannot be displayed.
 
 - Adds R3 (right-stick click) to run native bag cleanup while the controller inventory has focus, with a Clean Up Bags hint inside its bottom panel. Cleanup is unavailable in combat or while holding a cursor item.
 
@@ -49,7 +49,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Usage
 
-- World-map flight points supplied by the client appear without visiting them first, including on maps where the native flight-point visibility gate hides the layer. Only your faction's and neutral nodes appear. Undiscovered icons are dimmed and use native undiscovered tooltip text; visiting a flight master updates their state. This does not unlock flight paths or reveal map terrain. Complete location coverage depends on the client's taxi API; no fallback location database is bundled. In-game validation is pending.
+- The map filter menu includes a Flight Points checkbox, enabled by default and saved account-wide. Unchecking it hides all world-map flight-point icons immediately; checking it restores them. World-map flight points supplied by the client appear without visiting them first, including on maps where the native flight-point visibility gate hides the layer. Only your faction's and neutral nodes appear. Undiscovered icons are dimmed and use native undiscovered tooltip text; visiting a flight master updates their state. This does not unlock flight paths or reveal map terrain. Complete location coverage depends on the client's taxi API; no fallback location database is bundled. In-game validation is pending.
 
 - Group loot roll item tooltips show native equipped-item comparisons without a modifier key, both when selecting a roll with the controller and when hovering its item with the mouse. Comparisons close with the native tooltip; items without comparable equipped gear retain their normal tooltip. In-game validation is pending.
 
