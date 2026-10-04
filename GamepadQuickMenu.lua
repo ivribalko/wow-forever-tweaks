@@ -430,19 +430,18 @@ local function SetFooter()
     end
 end
 
-SelectSlot = function(index)
-    selected = index
-    wheel.SegmentHighlight:SetShown(index ~= nil)
-    if index then
-        local angle, x, y = slots[index].art:GetSegmentRotationAndOffset()
-        wheel.SegmentHighlight:ClearAllPoints()
-        wheel.SegmentHighlight:SetPoint("CENTER", wheel.Background, "CENTER", x, y)
-        wheel.SegmentHighlight:SetRotation(angle)
-        wheel.SegmentHighlight:SetDesaturated(not GetSlotEntry(index))
+-- Only dismiss tooltips owned by this wheel's slots.
+local function HideSlotTooltip()
+    for _, button in ipairs(slots) do
+        if GameTooltip:IsOwned(button) then
+            GameTooltip:Hide()
+            return
+        end
     end
 end
 
 local function ShowTooltip(button)
+    if not wheel:IsShown() then return end
     local entry = GetSlotEntry(button:GetID())
     GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
     if entry and entry.kind == "leave-group" then
@@ -453,8 +452,21 @@ local function ShowTooltip(button)
     elseif entry and entry.kind == "item" then
         GameTooltip:SetItemByID(entry.id)
     elseif entry and entry.kind == "macro" then
-        local name = GetEntryInfo(entry)
-        GameTooltip:SetText(name)
+        local macro = ResolveMacro(entry)
+        local spell = macro and GetMacroSpell(macro)
+        local itemLink
+        if macro and not spell then
+            local _, link = GetMacroItem(macro)
+            itemLink = link
+        end
+        if spell then
+            GameTooltip:SetSpellByID(spell)
+        elseif itemLink then
+            GameTooltip:SetHyperlink(itemLink)
+        else
+            local name = GetEntryInfo(entry)
+            GameTooltip:SetText(name)
+        end
     else
         GameTooltip:SetText(button:GetID() == QUEST_SLOT and "Quest item" or "Empty slot")
     end
@@ -462,6 +474,23 @@ local function ShowTooltip(button)
         GameTooltip:AddLine("Reserved for the active tracked quest item. Updates outside combat.", 1, 1, 1, true)
     end
     GameTooltip:Show()
+end
+
+SelectSlot = function(index)
+    selected = index
+    wheel.SegmentHighlight:SetShown(index ~= nil)
+    if index then
+        local angle, x, y = slots[index].art:GetSegmentRotationAndOffset()
+        wheel.SegmentHighlight:ClearAllPoints()
+        wheel.SegmentHighlight:SetPoint("CENTER", wheel.Background, "CENTER", x, y)
+        wheel.SegmentHighlight:SetRotation(angle)
+        wheel.SegmentHighlight:SetDesaturated(not GetSlotEntry(index))
+    end
+    if index and wheel:IsShown() then
+        ShowTooltip(slots[index])
+    else
+        HideSlotTooltip()
+    end
 end
 
 RefreshSlots = function()
@@ -792,7 +821,15 @@ local function Initialize()
             if bindingPicker then SelectSlot(self:GetID()) end
             ShowTooltip(self)
         end)
-        button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        button:SetScript("OnLeave", function(self)
+            if GameTooltip:IsOwned(self) then
+                if selected and wheel:IsShown() then
+                    ShowTooltip(slots[selected])
+                else
+                    HideSlotTooltip()
+                end
+            end
+        end)
         button:SetScript("PreClick", function(self, mouseButton)
             if InCombatLockdown() then return end
             if bindingPicker or mouseButton ~= "LeftButton" then
@@ -890,7 +927,7 @@ local function Initialize()
     end)
     wheel:HookScript("OnHide", function()
         SetStickListening(false)
-        GameTooltip:Hide()
+        HideSlotTooltip()
         pendingEntry, pickerKey = nil, nil
         listening = false
         if InCombatLockdown() then bindingPicker = false end
