@@ -93,11 +93,12 @@ local function SpellUpgrades()
     return upgrades, rankless
 end
 
-local function MacroContents(spellID)
+local function MacroContents(spellID, legacy)
     local info = C_Spell.GetSpellInfo(spellID)
     if not info then return end
     local spell = info.name
-    local body = "#showtooltip " .. spell .. "\n/startattack [@target,combat,harm,nodead]\n/cast " .. spell
+    local targeting = legacy and "" or "\n/targetenemy [noexists]"
+    local body = "#showtooltip " .. spell .. targeting .. "\n/startattack [@target,combat,harm,nodead]\n/cast " .. spell
     if #body > 255 then return end
     return body, info.iconID
 end
@@ -113,7 +114,8 @@ local function RecoverOwnedMacros()
         if not OwnedMacro(index) and name and (name == "+" or name:match("^FT %d+$")) then
             local spell = body and body:match("^#showtooltip ([^\n]+)\n")
             local info = spell and C_Spell.GetSpellInfo(spell)
-            if info and MacroContents(info.spellID) == body then
+            -- Retain recovery of the previous template so synchronization upgrades it in place.
+            if info and (MacroContents(info.spellID) == body or MacroContents(info.spellID, true) == body) then
                 local key = name ~= "+" and name or "recovered:" .. body
                 state.macros[key] = { spellID = info.spellID, body = body }
             end
