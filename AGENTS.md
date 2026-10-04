@@ -24,6 +24,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Creates an Instance chat tab if missing and enables party, raid, and instance messages there, including leaders and raid warnings.
 - Sorts the full tracked-quest list by quest level, lowest first.
 - Shows the selected profession recipe's output tooltip with equipped-item comparisons.
+- Shows equipped-item comparison tooltips automatically for controller group loot roll selection and mouse-hover roll items.
 - Automatically replaces harmful, non-helpful spell actions with spell-casting macros that start autoattack in combat, reuses identical generated commands across ranks, and removes duplicate generated macros while preserving action-bar assignments. Helpful spells are excluded, and their unedited generated macros are restored to spell buttons before removal.
 - Automatically upgrades action-bar spells and makes spell references in macros rankless to use the highest learned rank.
 - Removes chat backgrounds and borders and shows chat tabs only on hover outside gamepad chat focus.
@@ -45,6 +46,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Captures protected-action failures with native field taint ownership and up to 20 quick-menu routing and mapped-button state changes in source and alpha packages for troubleshooting, without controller-panel method hooks.
 
 ## Usage
+
+- Group loot roll item tooltips show native equipped-item comparisons without a modifier key, both when selecting a roll with the controller and when hovering its item with the mouse. Comparisons close with the native tooltip; items without comparable equipped gear retain their normal tooltip. In-game validation is pending.
 
 - Press R3 (right-stick click) while the controller inventory has focus to invoke the native Clean Up Bags action. Its native controller icon and label appear inside the inventory bottom panel. Item menus, Bind mode, other focused interfaces, and chat input retain priority. The hint dims in combat or while holding a cursor item. Existing bag sort preferences and ignored-bag settings apply. In-game validation is pending.
 

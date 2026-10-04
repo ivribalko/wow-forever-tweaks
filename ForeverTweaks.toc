@@ -21,6 +21,7 @@ GamepadQuickMenu.lua
 QuestTracker.lua
 PlayerFrameXP.lua
 ProfessionTooltip.lua
+GroupLootTooltip.lua
 MacroRanks.lua
 AttackMacros.lua
 FoodDrinkMacros.lua
