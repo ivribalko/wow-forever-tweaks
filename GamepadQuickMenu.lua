@@ -420,8 +420,9 @@ end
 local function SetFooter()
     local combat = InCombatLockdown()
     local assigning = pendingEntry and not moveSource
-    wheel.RemoveHint:SetAlpha(assigning and 0 or (combat and 0.4 or 1))
+    wheel.RemoveHint:SetAlpha(pendingEntry and 0 or (combat and 0.4 or 1))
     wheel.MoveHint:SetAlpha(assigning and 0 or (combat and 0.4 or 1))
+    wheel.MoveHint:SetPromptText(moveSource and "Confirm Move" or "Move")
     if InCombatLockdown() then
         wheel.Footer:SetText("")
     elseif assigning then
