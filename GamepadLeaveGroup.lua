@@ -1,6 +1,6 @@
 -- Offers target invitations in shortcuts and immediate group leaving for the wheel.
 local driver = CreateFrame("Frame")
-local shortcuts, prompt, promptAnchor
+local shortcuts, prompt
 local buttonPending = true
 -- The shortcut only invites friendly players outside the current group.
 local function GetInviteTarget()
@@ -51,7 +51,6 @@ end
 
 local function RefreshPrompt(entry)
     local available = GetInviteTarget()
-    entry:SetPromptText("Invite Target")
     entry:EnableOrDisablePrompt(available)
 end
 
@@ -67,7 +66,7 @@ local function Install()
     if not prompt and legend and legend.groups and legend.groups.MODIFIER then
         -- Never call CreateEntry/AddToGroup here. Inserting into groups taints
         -- native legend iteration in the shared core-binding callback chain.
-        -- An independent prompt follows an existing row without joining it.
+        -- An unprotected child inherits row visibility immediately.
         local bagsEntry
         for _, entry in ipairs(legend.groups.MODIFIER) do
             if entry.InputIcon1 and entry.InputIcon1.mappedButtonKey == GAMEPAD_FACE_RIGHT then
@@ -76,14 +75,12 @@ local function Install()
             end
         end
         if bagsEntry then
-            prompt = CreateFrame("Frame", nil, legend, "InputPromptOneIconWithTextTemplate")
+            prompt = CreateFrame("Frame", nil, bagsEntry, "InputPromptOneIconWithTextTemplate")
             prompt:SetPromptInputIconKey(1, GAMEPAD_FACE_BOTTOM)
             prompt:SetPromptText("Invite Target")
             prompt:SetPromptFont("GameFontNormal")
             prompt:SetInputIconSize(1, 18, 18)
             prompt:SetPoint("TOPLEFT", bagsEntry, "TOPLEFT", 0, -24)
-            prompt:SetShown(bagsEntry:IsShown())
-            promptAnchor = bagsEntry
             RefreshPrompt(prompt)
         end
     end
@@ -92,11 +89,6 @@ local function Install()
     if shortcuts and (buttonPending
         or shortcuts.faceBottomButton:GetScript("OnClick") ~= OnInviteClick) then
         RefreshButton()
-    end
-    if prompt and promptAnchor then
-        local visible = promptAnchor:IsVisible()
-        if visible and not prompt:IsShown() then RefreshPrompt(prompt) end
-        prompt:SetShown(visible)
     end
 end
 
@@ -115,12 +107,6 @@ driver:SetScript("OnEvent", function(_, event)
     Install()
 end)
 
--- Follow native setup and helper visibility without running addon callbacks
--- inside native button-setup or helper show/hide paths.
-local elapsed = 0
-driver:SetScript("OnUpdate", function(_, delta)
-    elapsed = elapsed + delta
-    if elapsed < 0.1 then return end
-    elapsed = 0
-    Install()
-end)
+-- Observe native button resets each frame without hooking native setup.
+-- Prompt visibility comes directly from its unprotected parent row.
+driver:SetScript("OnUpdate", Install)
