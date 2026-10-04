@@ -4,6 +4,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
+- Adds R3 (right-stick click) to run native bag cleanup while the controller inventory has focus, with a Clean Up Bags hint inside its bottom panel. Cleanup is unavailable in combat or while holding a cursor item.
+
 - Adds one-second native error-message suppression to the supported food and drink consume/conjure macros, preserving their item order, spell fallback, names, icons, and quick-wheel references.
 
 - Keeps addon operations silent in chat, including quick-wheel assignment, capacity warnings, slash-command responses, and quest-order rejection notices.
@@ -43,6 +45,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Captures protected-action failures with native field taint ownership and up to 20 quick-menu routing and mapped-button state changes in source and alpha packages for troubleshooting, without controller-panel method hooks.
 
 ## Usage
+
+- Press R3 (right-stick click) while the controller inventory has focus to invoke the native Clean Up Bags action. Its native controller icon and label appear inside the inventory bottom panel. Item menus, Bind mode, other focused interfaces, and chat input retain priority. The hint dims in combat or while holding a cursor item. Existing bag sort preferences and ignored-bag settings apply. In-game validation is pending.
 
 - The existing Conjure Food and Conjure Water item-use macros receive `/run ForeverTweaksSuppressFoodErrors()` on login or macro changes, outside combat with an empty cursor. Only the exact supported item lists and spell fallback are matched. Each press pauses native error messages and their associated sounds for one second to cover delayed server rejections, including standing requirements. Repeated presses extend the window; unrelated errors during that second are also suppressed. Audio settings remain unchanged; sounds outside the native error-message handler are not suppressed. Normal error handling is restored afterward. Account macro edits apply across characters. In-game validation is pending.
 

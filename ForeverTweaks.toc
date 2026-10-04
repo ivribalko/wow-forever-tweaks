@@ -16,6 +16,7 @@ InstanceChat.lua
 ChatHistory.lua
 GamepadCamera.lua
 GamepadLeaveGroup.lua
+GamepadBagCleanup.lua
 GamepadQuickMenu.lua
 QuestTracker.lua
 PlayerFrameXP.lua
