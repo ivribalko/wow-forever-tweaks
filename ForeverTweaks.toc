@@ -22,6 +22,7 @@ GamepadQuickMenu.lua
 QuestTracker.lua
 FlightPoints.lua
 PlayerFrameXP.lua
+TargetFrameThreat.lua
 ProfessionTooltip.lua
 GroupLootTooltip.lua
 MacroRanks.lua

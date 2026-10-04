@@ -4,6 +4,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
+- Shows your threat as a hollow ring inside the target level badge, matching the player XP ring’s shape. It is green below 70%, yellow from 70%, orange from 90% or elevated native threat status, and red while securely tanking. Fill compares your threat with the highest reported threat among the current tank, group members, and pets; a full ring means tied or leading threat. Updates immediately on threat events and refreshes every 0.05 seconds.
+
 - Shows faction-appropriate and neutral world-map flight points supplied by the client even when the native flight-point layer is hidden, with undiscovered icons dimmed. An independent Flight Points checkbox appears directly beneath the open map filter dropdown, enabled by default and saved account-wide; it toggles on left mouse-down without joining native controller navigation. Supplemental markers use addon-owned visuals with mouse-hover tooltips. Does not unlock travel; locations withheld by the client cannot be displayed.
 
 - Adds R3 (right-stick click) to run native bag cleanup while the controller inventory has focus, with a Clean Up Bags hint inside its bottom panel. Cleanup is unavailable in combat or while holding a cursor item.
@@ -48,6 +50,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Captures protected-action failures with native field taint ownership and up to 20 quick-menu routing and mapped-button state changes in source and alpha packages for troubleshooting, without controller-panel method hooks.
 
 ## Usage
+
+- The target level badge fills clockwise from the top with your threat relative to the highest reported threat. Colors are green below 70%, yellow from 70% to below 90%, and orange from 90%; native elevated threat status also forces orange, with securely tanking status taking priority as red. Half a ring means half that threat; a full ring means tied or leading, rather than the threshold for pulling aggro. The native level number or skull stays visible. The comparison includes group members and pets and the current tank inferred from native raw threat percentage. Other ungrouped attackers may be unavailable unless they are the current tank or target of target. The ring hides with no positive readable player threat, on friendly/player/dead targets, and when the target badge is hidden. Restricted threat values cannot be displayed. Updates follow threat events and a 0.05-second refresh. In-game validation is pending.
 
 - An independent Flight Points checkbox appears directly beneath the open map filter dropdown, enabled by default and saved account-wide; it toggles on left mouse-down without joining native controller navigation. Unchecking it hides world-map flight-point icons on the next visual refresh (within 0.1 seconds); checking it restores them. World-map flight points supplied by the client appear without visiting them first, including on maps where the native flight-point visibility gate hides the layer. Only your faction's and neutral nodes appear. Supplemental markers use mouse-hover tooltips without joining native controller navigation. Undiscovered icons are dimmed and use native undiscovered tooltip text; visiting a flight master updates their state. This does not unlock flight paths or reveal map terrain. Complete location coverage depends on the client's taxi API; no fallback location database is bundled. In-game validation is pending.
 
