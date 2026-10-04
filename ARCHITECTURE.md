@@ -82,3 +82,38 @@ The former Leave Party confirmation failed in game with both an addon-owned dial
 
 
 Quick-menu source/alpha diagnostics retain the last 20 distinct routing snapshots in `ForeverTweaksDiagnostics.quickMenuRouting`. The polling capture records initialization, effective Share binding, focus and binding-stack gates, visible/secure blockers, and mapped pressed buttons without native hooks or chat output. The capture uses `C_GamePad.IsEnabled` in ordinary Lua and runs behind `pcall` after binding refresh so diagnostic errors cannot interrupt routing. Beta and release packaging removes the capture and its polling call.
+
+
+## Native WoW UI integration and taint
+
+This is a general integration concern across WoW UI, not a map-only or dropdown-only issue. Native panels, menus, pooled elements, and controller focus/binding managers share state that ultimately feeds protected actions. Addon code can contaminate that state when it changes native objects or invokes native workflows from an insecure execution path. The visible failure may occur much later, when a different native handler reads the affected state. An error reported during panel close does not establish that the close handler introduced the taint.
+
+Prefer addon-owned visuals and controls with minimal contact with native state. Observe native visibility and geometry where practical, and keep bookkeeping on addon-owned objects. Adding a seemingly harmless child, menu description, callback, pooled element, or method hook is an integration change that needs scrutiny; appearance alone does not establish safety. A public extension API, a secure post-hook, or a `securecallfunction` wrapper is not evidence that every downstream controller operation remains untainted.
+
+The appropriate boundary depends on the feature and evidence. The Bind failure was resolved by removing protected visibility-proxy children while retaining an unprotected visual hint. The map-close failure was resolved by replacing native pin-pool manipulation with independent markers. The filter-menu extension reproduced a further failure and was replaced with an independent control, whose validation is still pending. These cases support a general precaution, not a claim that every native child or extension inevitably fails.
+
+For future native UI work:
+
+- Trace creation, callbacks, focus, bindings, and teardown in the Forever UI source before selecting an integration point.
+- Preserve previously established isolation boundaries; do not reintroduce a failed integration simply through another wrapper or public API.
+- Inspect persisted protected-action captures and distinguish the failing call from the earlier contamination source. Keep any new diagnostics bounded and alpha-only.
+- Remove or isolate the suspected integration, reload, and check the full interaction lifecycle, including opening, selecting, dismissing, closing, and returning to normal controller actions.
+- Record which behavior was confirmed in game, what remains a hypothesis, and what still needs validation. Do not generalize a successful workaround into proof of the exact internal taint mechanism.
+- Keep interaction-lifetime bugs separate from taint: an independently drawn control must still receive its click before native dismissal hides it.
+
+The case studies below and the earlier Bind-menu diagnosis preserve concrete evidence for this general guidance.
+
+## World-map and filter-dropdown taint diagnosis
+
+Closing the world map produced `ADDON_ACTION_FORBIDDEN`, attributed to ForeverTweaks, for `SetPreferredGamepadInteractTarget()`. Saved captures show the close path passing through `HideUIPanel` → `FrameHidden` → `DeactivateBindingGroup` → `RemoveSet` → `UpdateInteractIcons` → `SetPreferredGamepadInteractTarget`. The error surfaced when native controller bindings were removed; the addon did not directly call that protected function. An error on close can therefore reflect contamination introduced earlier while opening or populating the map.
+
+Two integration paths were isolated during this work:
+
+- The original flight-point implementation post-hooked the native provider's `RefreshAllData`, acquired supplemental pins through the native map pool, released native pins when disabled, and called the native provider directly when toggling the filter. Replacing that integration with addon-owned visual markers resolved ordinary map closing in game, as confirmed by the user. The replacements query taxi data and draw plain frames without native pin-pool membership, controller navigation, or provider calls. Existing native pin textures receive visual alpha changes only.
+- With ordinary closing working, opening the filter dropdown before closing the map still reproduced the protected-call failure. The remaining filter integration used `Menu.ModifyMenu("MENU_WORLD_MAP_TRACKING", ...)` and `CreateCheckbox` to insert an addon entry into the native menu. That extension was removed. The replacement is an independent `UIParent` checkbutton positioned beneath the open dropdown by polling its visibility and copying numeric geometry. It adds no native menu descriptions, callbacks, child frames, or navigation entries. In-game confirmation of the dropdown-close fix remains pending; the later report that the replacement was not clickable does not by itself confirm the taint error is gone.
+
+The reason to keep this control outside the native filter panel is the reproduced failure associated with extending that controller-managed menu. Visual placement alone is not the established cause: an entry created through the menu API participates in native menu creation and controller focus, even when it looks like a simple checkbox. The captures establish the failing protected call and the isolation sequence, but not the exact internal field or callback that first became tainted. This is not proof that all native menu extensions or all visual children are unsafe. Do not reintroduce the failed integration on the assumption that `Menu.ModifyMenu`, `hooksecurefunc`, or a `securecallfunction` wrapper guarantees safety on this client.
+
+The independent row had a separate click-lifetime issue. Native `Blizzard_Menu/Menu.lua` handles `GLOBAL_MOUSE_DOWN` by closing menus when the pointer is outside their bounds. The row is outside those bounds, so the next visual poll hides it; a checkbox waiting for mouse-up can disappear before its click completes. It registers `LeftButtonDown` to toggle on the press. This click adjustment still requires in-game confirmation and must not be described as evidence of a taint fix.
+
+For future map controls, retain the independent visual/control boundary and account-wide saved preference. Validate ordinary map close separately from opening the filter, toggling the checkbox, and then closing the map. Reload between isolation attempts so earlier taint does not survive into the next check. Inspect persisted captures after reproduction; never enable client taint logging. Relevant native sources are `Blizzard_MapCanvas/Blizzard_MapCanvas.lua`, `Blizzard_SharedMapDataProviders/FlightPointDataProvider.lua`, `Blizzard_WorldMap/Blizzard_WorldMapTemplates.lua`, and `Blizzard_Menu/Menu.lua` in the Forever UI source branch.

@@ -123,6 +123,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 The native Bind-menu interact-target taint was resolved in game by replacing the quick wheel’s protected visibility-proxy children on native panels with secure show/hide wrappers and addon-owned blocker flags. Hint relocation and layout-hook removal alone did not resolve it. See [the Bind-menu taint diagnosis](ARCHITECTURE.md#bind-menu-taint-diagnosis) for the captured call path and isolation evidence. The unprotected visual hint remains inside the native bottom panel.
 
+Before extending native WoW UI, read [the native UI taint guidance](ARCHITECTURE.md#native-wow-ui-integration-and-taint). The Bind panel, world map, and filter dropdown illustrate the same broader risk: addon changes can contaminate native controller state and fail later during unrelated-looking focus or close operations.
+
 ## Releases
 
 [`.pkgmeta`](.pkgmeta) configures CurseForge packaging as one `ForeverTweaks` folder. The manifest uses `@project-version@` for tag-based versions. Repository documentation, tooling, and local captures are excluded.
@@ -159,3 +161,5 @@ The project is licensed under the [MIT License](LICENSE). World of Warcraft and 
 - Never enable client taint logging (`taintLog`) for troubleshooting; it freezes or crashes the game. Use bounded SavedVariables diagnostics instead.
 
 - Do not treat `securecallfunction` wrappers as a taint fix; identify and remove the taint source, and require in-game evidence before claiming resolution.
+
+- Treat native WoW UI integration as a taint boundary: prefer addon-owned visuals and controls outside native state, pools, menus, and controller navigation; do not assume public APIs or secure hooks make an integration safe. Consult the [native UI taint guidance](ARCHITECTURE.md#native-wow-ui-integration-and-taint), preserve established isolation boundaries, and require in-game evidence before claiming a fix.
