@@ -1,9 +1,9 @@
 -- Provides a character-specific item/spell wheel at the unused Share fallback.
 local driver = CreateFrame("Frame")
-local owner, wheel, opener, cancel, remover
+local owner, wheel, opener, cancel, remover, mover
 local slots, selected, bindingPicker, initialized = {}, nil, false, false
 local fallbackBound, listening = false, false
-local pendingEntry, bindPrompt, pickerKey
+local pendingEntry, bindPrompt, pickerKey, moveSource
 local ApplyWheelBindings, RefreshBindPrompt
 local SHARE = "PADBACK"
 local QUEST_SLOT = 3 -- The top sector in the native radial geometry.
@@ -419,10 +419,12 @@ end
 
 local function SetFooter()
     local combat = InCombatLockdown()
-    wheel.RemoveHint:SetAlpha(pendingEntry and 0 or (combat and 0.4 or 1))
+    local assigning = pendingEntry and not moveSource
+    wheel.RemoveHint:SetAlpha(assigning and 0 or (combat and 0.4 or 1))
+    wheel.MoveHint:SetAlpha(assigning and 0 or (combat and 0.4 or 1))
     if InCombatLockdown() then
         wheel.Footer:SetText("")
-    elseif pendingEntry then
+    elseif assigning then
         local name = GetEntryInfo(pendingEntry) or "Selected action"
         wheel.Footer:SetText(name .. "\nHold Share · Aim right stick · Release Share: assign · Circle: back")
     else
@@ -524,7 +526,9 @@ RefreshBindings = function()
     end
     local entry = GetNativeBindEntry()
     owner:SetAttribute("bind-mode", entry ~= nil)
-    if wheel:IsShown() and pendingEntry
+    if wheel:IsShown() and moveSource and not WorldIsClear() then
+        wheel:Hide()
+    elseif wheel:IsShown() and pendingEntry and not moveSource
         and (not entry or entry.kind ~= pendingEntry.kind or entry.id ~= pendingEntry.id) then
         wheel:Hide()
     elseif wheel:IsShown() and not bindingPicker and not WorldIsClear() then
@@ -560,7 +564,8 @@ ApplyWheelBindings = function()
             SetOverrideBindingClick(wheel, true, key, cancel:GetName(), "LeftButton")
         end
         SetOverrideBindingClick(wheel, true, "PAD3", remover:GetName(), "LeftButton")
-        for _, key in ipairs({ "PAD1", "PAD4", "PADDUP", "PADDRIGHT", "PADDDOWN", "PADDLEFT",
+        SetOverrideBindingClick(wheel, true, "PAD4", mover:GetName(), "LeftButton")
+        for _, key in ipairs({ "PAD1", "PADDUP", "PADDRIGHT", "PADDDOWN", "PADDLEFT",
             "PADLSHOULDER", "PADRSHOULDER", "PADLTRIGGER", "PADRTRIGGER", "PADRSTICK" }) do
             SetOverrideBindingClick(wheel, true, key, "ForeverTweaksQuickMenuBlock", "LeftButton")
         end
@@ -571,6 +576,24 @@ end
 local function AssignPending(index)
     if not index or not pendingEntry or InCombatLockdown() then return end
     if index == QUEST_SLOT or index == LEAVE_SLOT then
+        return
+    end
+    if moveSource then
+        -- Commit both slots together; cancellation leaves the saved layout intact.
+        if ForeverTweaksQuickMenu[moveSource] == pendingEntry then
+            ForeverTweaksQuickMenu[moveSource], ForeverTweaksQuickMenu[index] =
+                ForeverTweaksQuickMenu[index], pendingEntry
+        end
+        moveSource, pendingEntry, pickerKey = nil, nil, nil
+        bindingPicker = false
+        opener:SetAttribute("bind-press", nil)
+        opener:SetAttribute("hold-armed", nil)
+        -- Retain the destination while returning to normal wheel controls.
+        -- Share release closes without activating the entry just moved.
+        owner:SetAttribute("selected-slot", index)
+        SelectSlot(index)
+        RefreshSlots()
+        ApplyWheelBindings()
         return
     end
     local entry = GetNativeBindEntry()
@@ -586,7 +609,8 @@ end
 -- A binding hold only assigns; it never activates the destination action.
 local function FinishBinding()
     if InCombatLockdown() or not pendingEntry or not wheel:IsShown() then return end
-    AssignPending(selected)
+    -- Releasing Share cancels a move; only a second Triangle confirms it.
+    if not moveSource then AssignPending(selected) end
     if wheel:IsShown() then wheel:Hide() end
 end
 
@@ -775,13 +799,21 @@ local function Initialize()
     wheel.Footer:SetPoint("CENTER", wheel.FooterBackground, "CENTER")
     wheel.Footer:SetSize(450, 70)
     local removeHint = CreateFrame("Frame", nil, wheel, "InputPromptOneIconWithTextTemplate")
-    removeHint:SetPoint("CENTER", wheel, "BOTTOM", 0, -5)
+    removeHint:SetPoint("CENTER", wheel, "BOTTOM", -65, -5)
     removeHint:SetPromptInputIconKey(1, GAMEPAD_FACE_LEFT)
     removeHint:SetPromptText("Remove")
     removeHint:SetPromptFont("GameFontNormal")
     removeHint:SetInputIconSize(1, 24, 24)
     removeHint:SetAlpha(0)
     wheel.RemoveHint = removeHint
+    local moveHint = CreateFrame("Frame", nil, wheel, "InputPromptOneIconWithTextTemplate")
+    moveHint:SetPoint("CENTER", wheel, "BOTTOM", 65, -5)
+    moveHint:SetPromptInputIconKey(1, GAMEPAD_FACE_TOP)
+    moveHint:SetPromptText("Move")
+    moveHint:SetPromptFont("GameFontNormal")
+    moveHint:SetInputIconSize(1, 24, 24)
+    moveHint:SetAlpha(0)
+    wheel.MoveHint = moveHint
 
     local anchors = { {150, 0}, {112, 112}, {0, 150}, {-112, 112},
         {-150, 0}, {-112, -112}, {0, -150}, {112, -112} }
@@ -838,7 +870,7 @@ local function Initialize()
         end)
         button:SetScript("PostClick", function(self, mouseButton)
             if InCombatLockdown() then return end
-            if mouseButton == "LeftButton" and pendingEntry then
+            if mouseButton == "LeftButton" and pendingEntry and not moveSource then
                 AssignPending(self:GetID())
             end
             RefreshSlots()
@@ -890,6 +922,20 @@ local function Initialize()
         ForeverTweaksQuickMenu[index] = nil
         RefreshSlots()
     end)
+    mover = CreateFrame("Button", "ForeverTweaksQuickMenuMove", wheel)
+    mover:RegisterForClicks("AnyUp")
+    mover:SetScript("OnClick", function()
+        if InCombatLockdown() or pendingEntry or not wheel:IsShown() then return end
+        local index = owner:GetAttribute("selected-slot")
+        if not index or index == QUEST_SLOT or index == LEAVE_SLOT then return end
+        local entry = ForeverTweaksQuickMenu[index]
+        if not entry then return end
+        moveSource, pendingEntry, bindingPicker = index, entry, true
+        opener:SetAttribute("hold-armed", nil)
+        opener:SetAttribute("bind-press", true)
+        RefreshSlots()
+        ApplyWheelBindings()
+    end)
     local blocker = CreateFrame("Button", "ForeverTweaksQuickMenuBlock", wheel)
     blocker:RegisterForClicks("AnyDown", "AnyUp")
     wheel:SetScript("OnGamepadStick", function(_, stick, x, y)
@@ -917,7 +963,11 @@ local function Initialize()
         pickerKey = nil
         -- Finish on release so returning to native bindings cannot replay the
         -- release into a newly restored action or reopen the wheel.
-        if key == "PAD2" then wheel:Hide() end
+        if key == "PAD4" and moveSource then
+            AssignPending(selected)
+        elseif key == "PAD2" then
+            wheel:Hide()
+        end
         return false
     end)
     wheel:HookScript("OnShow", function()
@@ -928,7 +978,7 @@ local function Initialize()
     wheel:HookScript("OnHide", function()
         SetStickListening(false)
         HideSlotTooltip()
-        pendingEntry, pickerKey = nil, nil
+        pendingEntry, pickerKey, moveSource = nil, nil, nil
         listening = false
         if InCombatLockdown() then bindingPicker = false end
         if not InCombatLockdown() then
