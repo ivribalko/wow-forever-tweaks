@@ -4,6 +4,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
+- Shows faction-appropriate and neutral world-map flight points supplied by the client even when the native flight-point layer is hidden, with undiscovered icons dimmed. Does not unlock travel; locations withheld by the client cannot be displayed.
+
 - Adds R3 (right-stick click) to run native bag cleanup while the controller inventory has focus, with a Clean Up Bags hint inside its bottom panel. Cleanup is unavailable in combat or while holding a cursor item.
 
 - Adds one-second native error-message suppression to the supported food and drink consume/conjure macros, preserving their item order, spell fallback, names, icons, and quick-wheel references.
@@ -46,6 +48,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Captures protected-action failures with native field taint ownership and up to 20 quick-menu routing and mapped-button state changes in source and alpha packages for troubleshooting, without controller-panel method hooks.
 
 ## Usage
+
+- World-map flight points supplied by the client appear without visiting them first, including on maps where the native flight-point visibility gate hides the layer. Only your faction's and neutral nodes appear. Undiscovered icons are dimmed and use native undiscovered tooltip text; visiting a flight master updates their state. This does not unlock flight paths or reveal map terrain. Complete location coverage depends on the client's taxi API; no fallback location database is bundled. In-game validation is pending.
 
 - Group loot roll item tooltips show native equipped-item comparisons without a modifier key, both when selecting a roll with the controller and when hovering its item with the mouse. Comparisons close with the native tooltip; items without comparable equipped gear retain their normal tooltip. In-game validation is pending.
 

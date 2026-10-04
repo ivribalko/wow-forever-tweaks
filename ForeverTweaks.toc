@@ -19,6 +19,7 @@ GamepadLeaveGroup.lua
 GamepadBagCleanup.lua
 GamepadQuickMenu.lua
 QuestTracker.lua
+FlightPoints.lua
 PlayerFrameXP.lua
 ProfessionTooltip.lua
 GroupLootTooltip.lua
