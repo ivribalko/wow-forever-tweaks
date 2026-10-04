@@ -160,6 +160,10 @@ local function DiscoverCombatBlockers()
     for _, name in ipairs(UISpecialFrames or {}) do Watch(_G[name]) end
     local manager = GamepadMode and GamepadMode.FrameControlsManager
     for _, panel in ipairs(manager and manager.shownFrames or {}) do Watch(panel) end
+    -- Loot rolls can first become focusable during combat, when discovery
+    -- cannot install wrappers. Watch the persistent native panel while hidden
+    -- so Share returns to native focus as soon as a roll appears.
+    Watch(GamepadGroupLootRollFrame)
     for _, name in ipairs({ "GamepadRadial", "GamepadHudMode", "GamepadActionBarEditFrame",
         "GameMenuFrame", "CompactRaidFrameManager", "StaticPopup1", "StaticPopup2", "StaticPopup3", "StaticPopup4",
         "CinematicFrame", "MovieFrame" }) do Watch(_G[name]) end
