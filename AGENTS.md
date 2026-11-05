@@ -8,7 +8,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 - Shows faction-appropriate and neutral world-map flight points supplied by the client even when the native flight-point layer is hidden, with undiscovered icons dimmed. An independent Flight Points checkbox appears directly beneath the open map filter dropdown, enabled by default and saved account-wide; it toggles on left mouse-down without joining native controller navigation. Supplemental markers use addon-owned visuals with mouse-hover tooltips. Does not unlock travel; locations withheld by the client cannot be displayed.
 
-- Adds R3 (right-stick click) to run native bag cleanup while the controller inventory has focus, with a Clean Up Bags hint inside its bottom panel. Cleanup is unavailable in combat or while holding a cursor item.
+- Adds R3 (right-stick click) to run native bag cleanup while the controller inventory has focus, with a Clean Up Bags hint inside its bottom panel that follows native layout every frame without a timed refresh delay. Cleanup is unavailable in combat or while holding a cursor item.
 
 - Adds one-second native error-message suppression to the supported food and drink consume/conjure macros, preserving their item order, spell fallback, names, icons, and quick-wheel references.
 
@@ -57,7 +57,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 - Group loot roll item tooltips show native equipped-item comparisons without a modifier key, both when selecting a roll with the controller and when hovering its item with the mouse. Comparisons close with the native tooltip; items without comparable equipped gear retain their normal tooltip. In-game validation is pending.
 
-- Press R3 (right-stick click) while the controller inventory has focus to invoke the native Clean Up Bags action. Its native controller icon and label appear inside the inventory bottom panel. Item menus, Bind mode, other focused interfaces, and chat input retain priority. The hint dims in combat or while holding a cursor item. Existing bag sort preferences and ignored-bag settings apply. In-game validation is pending.
+- Press R3 (right-stick click) while the controller inventory has focus to invoke the native Clean Up Bags action. Its native controller icon and label appear inside the inventory bottom panel, with layout reconciled every frame instead of waiting for a timed refresh. Item menus, Bind mode, other focused interfaces, and chat input retain priority. The hint dims in combat or while holding a cursor item. Existing bag sort preferences and ignored-bag settings apply. In-game validation is pending.
 
 - The existing Conjure Food and Conjure Water item-use macros receive `/run ForeverTweaksSuppressFoodErrors()` on login or macro changes, outside combat with an empty cursor. Only the exact supported item lists and spell fallback are matched. Each press pauses native error messages and their associated sounds for one second to cover delayed server rejections, including standing requirements. Repeated presses extend the window; unrelated errors during that second are also suppressed. Audio settings remain unchanged; sounds outside the native error-message handler are not suppressed. Normal error handling is restored afterward. Account macro edits apply across characters. In-game validation is pending.
 

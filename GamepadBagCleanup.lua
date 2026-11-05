@@ -40,7 +40,7 @@ local function RefreshHint(legend, visible, enabled)
         label:SetText(BAG_CLEANUP_BAGS or "Clean Up Bags")
         hint:SetWidth(label:GetStringWidth() + 29)
     end
-    hint:SetParent(container)
+    if hint:GetParent() ~= container then hint:SetParent(container) end
     hintLegend = legend
 
     -- Read native prompt bounds afresh; never register in native layout tables
@@ -68,18 +68,27 @@ local function RefreshHint(legend, visible, enabled)
         end
         if not legend.wrapAroundRowWidth then width = x + hint:GetWidth() + 10 end
         height = math.max(height, -y + 34)
-        hint:ClearAllPoints()
-        hint:SetPoint("TOPLEFT", container, "TOPLEFT", x, y)
+        local point, relative, relativePoint, oldX, oldY = hint:GetPoint(1)
+        if point ~= "TOPLEFT" or relative ~= container or relativePoint ~= "TOPLEFT"
+            or oldX ~= x or oldY ~= y then
+            hint:ClearAllPoints()
+            hint:SetPoint("TOPLEFT", container, "TOPLEFT", x, y)
+        end
         local atlas = InputIconTextureSetUtility.GetNormalActiveInputIconButtonTexture(GAMEPAD_STICK_RIGHT_PRESS)
         if atlas then hint.Icon:SetAtlas(atlas) end
         hint:SetAlpha(enabled and 1 or 0.4)
     end
-    container:SetSize(width, height)
-    legend:SetHeight(height)
-    if not legend.wrapAroundRowWidth then
-        legend:SetWidth(width + (legend.modifierFrame and legend.modifierFrame:GetWidth() or 0))
+    if container:GetWidth() ~= width or container:GetHeight() ~= height then
+        container:SetSize(width, height)
     end
-    if legend.modifierFrame then legend.modifierFrame:SetHeight(height) end
+    if legend:GetHeight() ~= height then legend:SetHeight(height) end
+    if not legend.wrapAroundRowWidth then
+        local legendWidth = width + (legend.modifierFrame and legend.modifierFrame:GetWidth() or 0)
+        if legend:GetWidth() ~= legendWidth then legend:SetWidth(legendWidth) end
+    end
+    if legend.modifierFrame and legend.modifierFrame:GetHeight() ~= height then
+        legend.modifierFrame:SetHeight(height)
+    end
     hint:SetShown(visible)
 end
 
@@ -117,10 +126,8 @@ driver:RegisterEvent("PLAYER_LOGIN")
 driver:RegisterEvent("PLAYER_REGEN_ENABLED")
 driver:RegisterEvent("PLAYER_REGEN_DISABLED")
 driver:SetScript("OnEvent", Refresh)
-local elapsed = 0
-driver:SetScript("OnUpdate", function(_, delta)
-    elapsed = elapsed + delta
-    if elapsed < 0.1 or not IsLoggedIn() then return end
-    elapsed = 0
-    Refresh()
+-- Reconcile native footer rebuilds before rendering instead of displaying a
+-- partial panel until a timer expires. Keep native focus/layout callbacks untouched.
+driver:SetScript("OnUpdate", function()
+    if IsLoggedIn() then Refresh() end
 end)
