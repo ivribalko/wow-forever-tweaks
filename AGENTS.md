@@ -19,7 +19,6 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Shows quick-wheel tooltips for right-stick selection and mouse hover, including items, abilities, and resolved macro items or spells. Tooltips remain visible for the retained selection and close with the wheel.
 
 - Shows action-button cooldown timers as a single value with native units instead of minutes and seconds together.
-- Sets ground-effect density to 250 at login and UI reload.
 - Requests the maximum camera zoom distance with `cameraDistanceMaxZoomFactor = 4` at login and UI reload, subject to the client limit.
 - Sets NPC and player nameplate view distance to 60 yards at login and UI reload, subject to the client's range limit.
 - Adds a small reload button beside the compact action-bar toggle in a centered row below the minimap.
@@ -62,8 +61,6 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - The existing Conjure Food and Conjure Water item-use macros receive `/run ForeverTweaksSuppressFoodErrors()` on login or macro changes, outside combat with an empty cursor. Only the exact supported item lists and spell fallback are matched. Each press pauses native error messages and their associated sounds for one second to cover delayed server rejections, including standing requirements. Repeated presses extend the window; unrelated errors during that second are also suppressed. Audio settings remain unchanged; sounds outside the native error-message handler are not suppressed. Normal error handling is restored afterward. Account macro edits apply across characters. In-game validation is pending.
 
 - Sets `cameraDistanceMaxZoomFactor` to `4` at login and UI reload to request the extended camera zoom limit. Scroll out to use it; the addon does not force the current zoom. The Forever client may cap the accepted value or distance; in-game validation is pending.
-
-- Sets `groundEffectDensity` to `250` at login and UI reload. The client may enforce its supported range; in-game validation is pending.
 
 - Nameplate view distance requests 60 yards for NPCs and players at login and UI reload. The native distance settings also affect friendly nameplates when enabled; nameplate visibility preferences remain unchanged. The client may enforce a lower range limit. In-game validation is pending.
 
