@@ -4,7 +4,34 @@ local restedFill
 local levelCircle
 local xpSweep
 local restedSweep
+local xpMouseover
 local hookedContainers = setmetatable({}, { __mode = "k" })
+
+local function HideXPTooltip()
+    if xpMouseover and GameTooltip:IsOwned(xpMouseover) then
+        GameTooltip:Hide()
+    end
+end
+
+local function ShowXPTooltip()
+    local maximum = UnitXPMax("player")
+    if not xpMouseover:IsVisible() or maximum <= 0 then
+        return
+    end
+    local current = UnitXP("player")
+    -- Reuse the native XP tooltip's localized values and rested-state explanation.
+    GameTooltip:SetOwner(xpMouseover, "ANCHOR_RIGHT")
+    GameTooltip_SetTitle(GameTooltip, XP_TEXT:format(BreakUpLargeNumbers(current),
+        BreakUpLargeNumbers(maximum), math.ceil(current / maximum * 100)))
+    local state, name, multiplier = GetRestState()
+    if state then
+        GameTooltip_AddHighlightLine(GameTooltip, EXHAUST_TOOLTIP1:format(name, multiplier * 100))
+        if not IsResting() and (state == 4 or state == 5) then
+            GameTooltip_AddHighlightLine(GameTooltip, EXHAUST_TOOLTIP2)
+        end
+    end
+    GameTooltip:Show()
+end
 
 local function UpdatePlayerXP()
     if not xpFill then
@@ -15,6 +42,7 @@ local function UpdatePlayerXP()
         or not levelCircle:IsShown() or not PlayerLevelText:IsShown() then
         xpFill:Hide()
         restedFill:Hide()
+        xpMouseover:Hide()
         return
     end
 
@@ -27,6 +55,10 @@ local function UpdatePlayerXP()
     restedSweep:SetToPercent(progress + rested)
     xpFill:SetShown(progress > 0)
     restedFill:SetShown(rested > 0)
+    xpMouseover:Show()
+    if GameTooltip:IsOwned(xpMouseover) then
+        ShowXPTooltip()
+    end
 end
 
 -- Mask artwork without hooking Blizzard's bar-assignment or animation methods.
@@ -80,6 +112,15 @@ local function InitializePlayerXP()
             xpFill, xpSweep = CreateSweep(0.85, 0.58, 0.08, 6)
             PlayerLevelText:SetDrawLayer("OVERLAY", 7)
 
+            -- An unprotected hover-only region leaves player-frame clicks with Blizzard.
+            xpMouseover = CreateFrame("Frame", nil, main)
+            xpMouseover:SetAllPoints(levelCircle)
+            xpMouseover:EnableMouseMotion(true)
+            xpMouseover:SetMouseClickEnabled(false)
+            xpMouseover:SetScript("OnEnter", ShowXPTooltip)
+            xpMouseover:SetScript("OnLeave", HideXPTooltip)
+            xpMouseover:SetScript("OnHide", HideXPTooltip)
+
             for _, name in ipairs({ "PlayerFrame_UpdateRolesAssigned", "PlayerFrame_ToPlayerArt", "PlayerFrame_ToVehicleArt" }) do
                 hooksecurefunc(name, UpdatePlayerXP)
             end
@@ -105,6 +146,7 @@ events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:RegisterEvent("PLAYER_XP_UPDATE")
 events:RegisterEvent("UPDATE_EXHAUSTION")
+events:RegisterEvent("PLAYER_UPDATE_RESTING")
 events:RegisterEvent("PLAYER_LEVEL_CHANGED")
 events:RegisterEvent("PLAYER_MAX_LEVEL_UPDATE")
 events:RegisterEvent("ENABLE_XP_GAIN")
