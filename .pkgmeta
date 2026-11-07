@@ -4,7 +4,6 @@ enable-nolib-creation: no
 ignore:
   - AGENTS.md
   - README.md
-  - ARCHITECTURE.md
   - Reload.png
   - tools
   - dist

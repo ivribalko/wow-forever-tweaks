@@ -18,6 +18,7 @@ ChatHistory.lua
 GamepadCamera.lua
 GamepadLeaveGroup.lua
 GamepadBagCleanup.lua
+GamepadDisenchant.lua
 GamepadQuickMenu.lua
 QuestTracker.lua
 FlightPoints.lua

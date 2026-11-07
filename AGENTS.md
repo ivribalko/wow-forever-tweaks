@@ -4,6 +4,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
+- Shows an independent Disenchant row beneath the inventory item’s open More menu when Enchanting’s Disenchant spell is known. Square or a mouse press casts on that item through an addon-owned secure button. The row stays outside native menu construction and controller navigation; combat, occupied cursors, locked items, and obvious non-disenchantable items prevent casting. In-game validation is pending.
+
 - Shows your threat as a hollow ring inside the target level badge, matching the player XP ring’s shape. It is green below 70%, yellow from 70%, orange from 90% or elevated native threat status, and red while securely tanking. Fill compares your threat with the highest reported threat among the current tank, group members, and pets; a full ring means tied or leading threat. Updates immediately on threat events and refreshes every 0.05 seconds.
 
 - Shows faction-appropriate and neutral world-map flight points supplied by the client even when the native flight-point layer is hidden, with undiscovered icons dimmed. An independent Flight Points checkbox appears directly beneath the open map filter dropdown, enabled by default and saved account-wide; it toggles on left mouse-down without joining native controller navigation. Supplemental markers use addon-owned visuals with mouse-hover tooltips. Does not unlock travel; locations withheld by the client cannot be displayed.
@@ -49,6 +51,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Captures protected-action failures with native field taint ownership and up to 20 quick-menu routing and mapped-button state changes in source and alpha packages for troubleshooting, without controller-panel method hooks.
 
 ## Usage
+
+- With Enchanting learned, open an inventory item’s More menu and press Square or click the separate Disenchant row beneath it. It casts immediately without an additional confirmation, only outside combat on unlocked uncommon, rare, and epic weapons or armor with an empty cursor. The client/server validates exact eligibility and skill requirements. Unavailable actions appear dimmed. Square leaves the native menu open; close it with the normal Back action. Mouse activation happens on press before native outside-click dismissal. The row hides after activation; reopen More for another item. If the captured item changes, reopen More before casting. In-game activation and taint validation are pending.
 
 - The target level badge fills clockwise from the top with your threat relative to the highest reported threat. Colors are green below 70%, yellow from 70% to below 90%, and orange from 90%; native elevated threat status also forces orange, with securely tanking status taking priority as red. Half a ring means half that threat; a full ring means tied or leading, rather than the threshold for pulling aggro. The native level number or skull stays visible. The comparison includes group members and pets and the current tank inferred from native raw threat percentage. Other ungrouped attackers may be unavailable unless they are the current tank or target of target. The ring hides with no positive readable player threat, on friendly/player/dead targets, and when the target badge is hidden. Restricted threat values cannot be displayed. Updates follow threat events and a 0.05-second refresh. In-game validation is pending.
 
@@ -113,6 +117,90 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - The automatic quest-reward feedback survey ("Did you experience any issues?") is hidden without submitting a report.
 - In source and alpha packages, protected-action failures are captured in `ForeverTweaksDiagnostics` SavedVariables, with up to 20 records of addon attribution, action, UI state, and call stack. Reload after reproducing a failure to persist the capture in the client's WTF directory; keep these files outside the repository.
 
+## Architecture
+
+- [ForeverTweaks.toc](ForeverTweaks.toc) lists modules and load order; [ForeverTweaks.lua](ForeverTweaks.lua) contains shared UI behavior and login settings.
+- Root-level Lua files contain individual features; [GamepadQuickMenu.lua](GamepadQuickMenu.lua), [AttackMacros.lua](AttackMacros.lua), and [ChatHistory.lua](ChatHistory.lua) are the main controller, macro, and chat modules.
+- [tools/](tools/) contains controller utilities; [.pkgmeta](.pkgmeta) defines packaging.
+- [AGENTS.md](AGENTS.md) holds this documentation and repository rules; `README.md` links to it.
+
+## Implementation notes
+
+- The quick wheel stays outside `UISpecialFrames` and `UIPanelWindows`. Its secure owner retains stick selection and preconfigured actions; visual callbacks do not write protected selection or action attributes. A constant state driver clears its sample attribute to permit repeated updates. Show/hide snippets temporarily set the native state manager’s `updatetime` to zero and restore the previous interval only if it remains zero; this affects all state drivers and cannot interrupt an already-running timer.
+- Quick-wheel focus discovery reads native state without replacing focus methods. Collapsed raid controls map to `displayFrame`, and chat blockers map to native focus footers. `GamepadGroupLootRollFrame` is registered while hidden so a first roll appearing in combat can release Share. The collapsed-raid exception checks the binding group and expansion function, not the shared function-binding CLICK button.
+- Bind assignment reads `BIND_ACTION` pickup metadata without invoking pickup APIs. The same opener retains Share through release, while the elevated picker consumes assignment input before native action-bar listeners. Footer hints use plain textures and font strings; polling derives background bounds from native prompt geometry without changing native prompt tables or hooking layout methods.
+- Quick-wheel quest and Leave Party entries are runtime-resolved reserved slots. Leave Party uses a request method after the wheel closes, not a synthetic click. Macro identity includes scope, name, and body. Cooldowns pass restricted spell duration objects directly to native widgets; tooltips and visual selection stay separate from secure action configuration.
+- Bag cleanup reads the native footer and top binding set before overriding R3. Disenchant observes the open More menu and its item owner, copies numeric bounds to a separate secure row, and validates the captured item GUID before casting. Neither feature registers native controller entries; secure combat handlers clear their overrides. Disenchant positions the row in UIParent coordinates above fullscreen inventory chrome and checks the native focused-menu identity rather than footer-stack order. It uses `SecureHandlerExecute` directly because its backdrop template replaces the load handler that installs the `Execute` method.
+- Flight markers avoid native pin pools and provider calls; existing native icons receive alpha changes only. The independent filter row uses a `UIParent` control. XP and threat rings share transparent-center artwork and constant radial animations. The XP hover frame accepts mouse motion but passes clicks through, and hides only its own tooltip.
+- Group-loot comparisons use tooltip post-processing limited to `GameTooltip` and `GetLootRollItem`. Profession previews use a separate result tooltip and two comparison tooltips attached to the crafting schematic lifecycle. Action cooldown formatting post-hooks `ActionButton_ApplyCooldown` and changes only the native abbreviation threshold.
+- Chat work shares a login-started ticker over `CHAT_FRAMES`. Artwork uses `CHAT_FRAME_TEXTURES`; input backgrounds and channel labels use alpha changes. Draft width is measured with a hidden font string and applied through the scrollbar-relative right anchor. Expansion temporarily anchors the dock primary at its bottom-left corner and restores all original anchors on focus exit, hide, or logout. Chat activation and sticky-channel attributes remain native to avoid contaminating controller focus.
+- History restoration uses `BackFillMessage` before new login messages and consumes its saved snapshot once. Whisper recreation uses `FCF_OpenTemporaryWindow`; unresolved friend identities wait for friend-list updates. Quest sorting debounces events and inserts watches in reverse order because the client prepends them.
+- Macro synchronization debounces action/spell events, upgrades spells before conversion, and recognizes generated bodies after normalizing line endings and trailing newlines. Duplicate references and helpful-spell restorations are verified before deleting macros; failed placements retain their source for retry. Rank parsing is shared through `MacroRanks.lua`.
+- Food-error suppression temporarily unregisters only `UI_ERROR_MESSAGE`; repeated presses replace the expiry timer, and logout restores registration. Combat fades use one blend driver that stops at completion and reverses from its current value. Cast-bar hooks avoid multiplying alpha repeatedly and adjust animation endpoints because animations bypass `SetAlpha`.
+- `Reload.tga` supplies the addon-list icon; `Reload.png` is sharing artwork excluded from packages. Minimap controls use `UI-HUD-Minimap-Frame-Cycle`. Controller input mapping stays in the external restore tool rather than individual in-game bindings.
+
+### Bind-menu taint diagnosis
+
+Opening native item Bind produced `ADDON_ACTION_FORBIDDEN` for `SetPreferredGamepadInteractTarget()`. The captured native path was `BindItem` → `EnterBindingMode` → `SetOverrideAllowLeftRightModifiers` → `AssumeCoreBindingsAreUsable` → `UpdateActionBarFocusedState` → `UpdateInteractIcons`. The failure occurred outside combat on the first open, before opening the wheel picker.
+
+Disabling `GamepadQuickMenu.lua` removed the error. Removing native layout hooks and moving or replacing the hint did not resolve it. Re-enabling the wheel after replacing its protected visibility-proxy children on native panels resolved the Bind error in game.
+
+`DiscoverCombatBlockers` uses `SecureHandlerWrapScript` on each observed panel’s `OnShow` and `OnHide`. These wrappers update `blocker-N` flags on the addon-owned secure owner and run `combat-refresh`; that snippet reads the flags to close the wheel and release Share when native interfaces take priority. Initial visibility and newly available panels are discovered outside combat. No protected proxy children are attached to those panels.
+
+The Quick Menu hint remains an unprotected visual-only child inside the native bottom panel. Its presence is distinct from the removed protected visibility proxies. The exact internal client taint propagation was not established; the isolation and successful replacement identify the problematic quick-wheel integration. This finding does not establish that every protected child elsewhere in the addon causes the same failure.
+
+### Taint troubleshooting limitation
+
+Wrapping a native call in `securecallfunction` does not sanitize already tainted tables, fields, arguments, or callback registrations. It is not a substitute for finding and removing the addon integration that contaminates the native path. Do not infer a successful fix from the wrapper alone.
+
+The former Leave Party confirmation failed in game with both an addon-owned dialog definition and Blizzard’s generic definition. Captures showed `SetPreferredGamepadInteractTarget` failures during popup show/hide, followed by `DescendStop` and `RunBinding` failures. Leave Party bypasses confirmation entirely through `C_PartyInfo.ConfirmLeaveParty`, removing that popup/controller-focus integration. In-game validation of direct leaving is pending.
+
+
+Quick-menu source/alpha diagnostics retain the last 20 distinct routing snapshots in `ForeverTweaksDiagnostics.quickMenuRouting`. The polling capture records initialization, effective Share binding, focus and binding-stack gates, visible/secure blockers, and mapped pressed buttons without native hooks or chat output. The capture uses `C_GamePad.IsEnabled` in ordinary Lua and runs behind `pcall` after binding refresh so diagnostic errors cannot interrupt routing. Beta and release packaging removes the capture and its polling call.
+
+
+### Native WoW UI integration and taint
+
+This is a general integration concern across WoW UI, not a map-only or dropdown-only issue. Native panels, menus, pooled elements, and controller focus/binding managers share state that ultimately feeds protected actions. Addon code can contaminate that state when it changes native objects or invokes native workflows from an insecure execution path. The visible failure may occur much later, when a different native handler reads the affected state. An error reported during panel close does not establish that the close handler introduced the taint.
+
+Prefer addon-owned visuals and controls with minimal contact with native state. Observe native visibility and geometry where practical, and keep bookkeeping on addon-owned objects. Adding a seemingly harmless child, menu description, callback, pooled element, or method hook is an integration change that needs scrutiny; appearance alone does not establish safety. A public extension API, a secure post-hook, or a `securecallfunction` wrapper is not evidence that every downstream controller operation remains untainted.
+
+The appropriate boundary depends on the feature and evidence. The Bind failure was resolved by removing protected visibility-proxy children while retaining an unprotected visual hint. The map-close failure was resolved by replacing native pin-pool manipulation with independent markers. The filter-menu extension reproduced a further failure and was replaced with an independent control, whose validation is still pending. These cases support a general precaution, not a claim that every native child or extension inevitably fails.
+
+For future native UI work:
+
+- Trace creation, callbacks, focus, bindings, and teardown in the Forever UI source before selecting an integration point.
+- Preserve previously established isolation boundaries; do not reintroduce a failed integration simply through another wrapper or public API.
+- Inspect persisted protected-action captures and distinguish the failing call from the earlier contamination source. Keep any new diagnostics bounded and alpha-only.
+- Remove or isolate the suspected integration, reload, and check the full interaction lifecycle, including opening, selecting, dismissing, closing, and returning to normal controller actions.
+- Record which behavior was confirmed in game, what remains a hypothesis, and what still needs validation. Do not generalize a successful workaround into proof of the exact internal taint mechanism.
+- Keep interaction-lifetime bugs separate from taint: an independently drawn control must still receive its click before native dismissal hides it.
+
+The case studies below and the earlier Bind-menu diagnosis preserve concrete evidence for this general guidance.
+
+### Inventory More menu activation investigation
+
+- Source/alpha captures retain up to 12 changing Disenchant visibility snapshots in `ForeverTweaksDiagnostics.disenchantVisibility`: spell knowledge, inventory/menu visibility, menu tags, owner recognition, focus, row visibility, eligibility, and the Square binding. Captures omit item identities and native object references. Reload after reproducing to persist them.
+
+- Extending More with `Menu.ModifyMenu` and `CreateButton` left the controller cursor in inventory when the menu opened. Persisted routing captures show an anonymous menu in the focus list without its menu-footer binding set, followed by protected `SetPreferredGamepadInteractTarget` failures attributed to ForeverTweaks.
+- Removing `SetEnabled` and the custom row initializer did not restore activation, as confirmed in game. Those writes were insufficient to explain the failure; the exact taint source within menu construction remains unconfirmed.
+- The replacement removes the native menu extension entirely and displays an independent secure row beneath the open menu, with a Square override limited to native menu focus. It neither invokes native focus/close methods nor participates in native menu layout or navigation. A reload is required to discard the old registered extension and existing taint. Restored menu activation and taint-free interaction require in-game confirmation.
+
+### World-map and filter-dropdown taint diagnosis
+
+Closing the world map produced `ADDON_ACTION_FORBIDDEN`, attributed to ForeverTweaks, for `SetPreferredGamepadInteractTarget()`. Saved captures show the close path passing through `HideUIPanel` → `FrameHidden` → `DeactivateBindingGroup` → `RemoveSet` → `UpdateInteractIcons` → `SetPreferredGamepadInteractTarget`. The error surfaced when native controller bindings were removed; the addon did not directly call that protected function. An error on close can therefore reflect contamination introduced earlier while opening or populating the map.
+
+Two integration paths were isolated during this work:
+
+- The original flight-point implementation post-hooked the native provider's `RefreshAllData`, acquired supplemental pins through the native map pool, released native pins when disabled, and called the native provider directly when toggling the filter. Replacing that integration with addon-owned visual markers resolved ordinary map closing in game, as confirmed by the user. The replacements query taxi data and draw plain frames without native pin-pool membership, controller navigation, or provider calls. Existing native pin textures receive visual alpha changes only.
+- With ordinary closing working, opening the filter dropdown before closing the map still reproduced the protected-call failure. The remaining filter integration used `Menu.ModifyMenu("MENU_WORLD_MAP_TRACKING", ...)` and `CreateCheckbox` to insert an addon entry into the native menu. That extension was removed. The replacement is an independent `UIParent` checkbutton positioned beneath the open dropdown by polling its visibility and copying numeric geometry. It adds no native menu descriptions, callbacks, child frames, or navigation entries. In-game confirmation of the dropdown-close fix remains pending; the later report that the replacement was not clickable does not by itself confirm the taint error is gone.
+
+The reason to keep this control outside the native filter panel is the reproduced failure associated with extending that controller-managed menu. Visual placement alone is not the established cause: an entry created through the menu API participates in native menu creation and controller focus, even when it looks like a simple checkbox. The captures establish the failing protected call and the isolation sequence, but not the exact internal field or callback that first became tainted. This is not proof that all native menu extensions or all visual children are unsafe. Do not reintroduce the failed integration on the assumption that `Menu.ModifyMenu`, `hooksecurefunc`, or a `securecallfunction` wrapper guarantees safety on this client.
+
+The independent row had a separate click-lifetime issue. Native `Blizzard_Menu/Menu.lua` handles `GLOBAL_MOUSE_DOWN` by closing menus when the pointer is outside their bounds. The row is outside those bounds, so the next visual poll hides it; a checkbox waiting for mouse-up can disappear before its click completes. It registers `LeftButtonDown` to toggle on the press. This click adjustment still requires in-game confirmation and must not be described as evidence of a taint fix.
+
+For future map controls, retain the independent visual/control boundary and account-wide saved preference. Validate ordinary map close separately from opening the filter, toggling the checkbox, and then closing the map. Reload between isolation attempts so earlier taint does not survive into the next check. Inspect persisted captures after reproduction; never enable client taint logging. Relevant native sources are `Blizzard_MapCanvas/Blizzard_MapCanvas.lua`, `Blizzard_SharedMapDataProviders/FlightPointDataProvider.lua`, `Blizzard_WorldMap/Blizzard_WorldMapTemplates.lua`, and `Blizzard_Menu/Menu.lua` in the Forever UI source branch.
+
 ## UI Source Reference
 
 - `Blizzard_Minimap/Camelot/Diel.lua` creates the day/night indicator as `MinimapCluster.DielFrame`, outside the Minimap widget, at frame level 5.
@@ -122,9 +210,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Quest reward feedback is registered in `Blizzard_Reports.lua` and displayed by `PopFrameAttachedSurvey` in `Blizzard_PTRFeedback.lua`. Its separate frame is stored in `PTR_IssueReporter.Data.FrameAttachedSurveyFrames[QuestFrame]`.
 - Search for the visible behavior, frame, event, or setting, then trace its callers and load order before choosing a hook. Automatic popups can use a different frame from `GameTooltip`.
 
-The native Bind-menu interact-target taint was resolved in game by replacing the quick wheel’s protected visibility-proxy children on native panels with secure show/hide wrappers and addon-owned blocker flags. Hint relocation and layout-hook removal alone did not resolve it. See [the Bind-menu taint diagnosis](ARCHITECTURE.md#bind-menu-taint-diagnosis) for the captured call path and isolation evidence. The unprotected visual hint remains inside the native bottom panel.
-
-Before extending native WoW UI, read [the native UI taint guidance](ARCHITECTURE.md#native-wow-ui-integration-and-taint). The Bind panel, world map, and filter dropdown illustrate the same broader risk: addon changes can contaminate native controller state and fail later during unrelated-looking focus or close operations.
+Before extending native WoW UI, read the [integration guidance](#native-wow-ui-integration-and-taint) and [Bind-menu diagnosis](#bind-menu-taint-diagnosis).
 
 ## Releases
 
@@ -163,4 +249,4 @@ The project is licensed under the [MIT License](LICENSE). World of Warcraft and 
 
 - Do not treat `securecallfunction` wrappers as a taint fix; identify and remove the taint source, and require in-game evidence before claiming resolution.
 
-- Treat native WoW UI integration as a taint boundary: prefer addon-owned visuals and controls outside native state, pools, menus, and controller navigation; do not assume public APIs or secure hooks make an integration safe. Consult the [native UI taint guidance](ARCHITECTURE.md#native-wow-ui-integration-and-taint), preserve established isolation boundaries, and require in-game evidence before claiming a fix.
+- Treat native WoW UI integration as a taint boundary: prefer addon-owned visuals and controls outside native state, pools, menus, and controller navigation; do not assume public APIs or secure hooks make an integration safe. Consult the [native UI taint guidance](#native-wow-ui-integration-and-taint), preserve established isolation boundaries, and require in-game evidence before claiming a fix.
