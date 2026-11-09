@@ -22,6 +22,7 @@ GamepadDisenchant.lua
 GamepadComprehend.lua
 GamepadQuickMenu.lua
 QuestTracker.lua
+QuestRewardValue.lua
 FlightPoints.lua
 PlayerFrameXP.lua
 TargetFrameThreat.lua

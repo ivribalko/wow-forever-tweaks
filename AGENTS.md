@@ -4,6 +4,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
+- Marks the selectable quest reward with the highest total vendor sell value with a gold coin icon in the claim-reward menu. Equal highest values are all marked; unsellable rewards are not marked. In-game validation is pending.
+
 - Adds an independent Comprehend row above the inventory More menu for the 17 recognized untranslated mage scrolls when Comprehend Scroll is known. Square or a mouse press casts on the selected scroll outside combat, with an empty cursor and an unlocked, unchanged item. Ordinary and deciphered scrolls hide the row. In-game validation is pending.
 
 - Shows an independent Disenchant row above the inventory item’s open More menu when Enchanting’s Disenchant spell is known. Square or a mouse press casts on that item through an addon-owned secure button. The row stays outside native menu construction and controller navigation; obvious non-disenchantable items hide the row, while combat, occupied cursors, and locked items prevent casting. In-game validation is pending.
@@ -53,6 +55,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Captures protected-action failures with native field taint ownership and up to 20 quick-menu routing and mapped-button state changes in source and alpha packages for troubleshooting, without controller-panel method hooks.
 
 ## Usage
+
+- When claiming a quest reward with multiple item choices, a gold coin appears at the top-left of each highest-value item's icon. Values include the rewarded stack quantity. Markers wait for every choice's item data to load and do not change selection, tooltips, or controller navigation. In-game validation is pending.
 
 - Open an untranslated mage scroll's More menu and press Square or click Comprehend above the menu. The action uses the localized, rankless Comprehend Scroll spell on that bag slot. The server validates skill requirements and the result. Locked items or occupied cursors dim the row; combat hides it. The row hides after activation; reopen More to retry or decipher another scroll. Square leaves the native menu open. Ordinary buff scrolls and already-deciphered mage scrolls do not show Comprehend. In-game casting and taint validation are pending.
 
