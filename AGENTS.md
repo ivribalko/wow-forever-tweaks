@@ -6,7 +6,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 - Creates a Use Conjured All character macro containing only item-ID `/use` commands for nine supported conjured waters and seven foods. In-game validation is pending.
 
-- Marks the selectable quest reward with the highest total vendor sell value with a gold coin icon in the claim-reward menu. Equal highest values are all marked; unsellable rewards are not marked. In-game validation is pending.
+- Marks the selectable quest reward with the highest total vendor sell value with a gold coin icon in the claim-reward menu. Equal highest values are all marked; unsellable rewards are not marked. Markers use the native gold-coin atlas on an independent tooltip-stratum overlay above the quest scroll panel and stay outside fullscreen-menu UI isolation. Coin visibility is confirmed in game; the coin is inset 3 UI units from the icon’s top-left corner and refreshes every frame without a timed delay.
 
 - Adds an independent Comprehend row above the inventory More menu for the 17 recognized untranslated mage scrolls when Comprehend Scroll is known. Square or a mouse press casts on the selected scroll outside combat, with an empty cursor and an unlocked, unchanged item. Ordinary and deciphered scrolls hide the row. In-game validation is pending.
 
@@ -58,7 +58,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 - Use Conjured All contains water IDs `231778`, `22018`, `8079`, `8078`, `8077`, `3772`, `2136`, `2288`, and `5350`, followed by food IDs `22895`, `8076`, `8075`, `1487`, `1114`, `1113`, and `5349`. Its 16 `/use item:` lines occupy 243 characters and can be assigned through native Bind. It does not conjure items or suppress errors. Setup waits for combat to end, an empty cursor, and a free character macro slot. The exact earlier Food & Water macro migrates in place; the generated two-click Use Conjured All body is replaced with direct item commands, preserving matching quick-wheel references. Unedited generated Use Conjured Water and Use Conjured Food macros and their matching quick-wheel entries are removed. Custom edits and ambiguous duplicate names are preserved. In-game validation is pending.
 
-- When claiming a quest reward with multiple item choices, a gold coin appears at the top-left of each highest-value item's icon. Values include the rewarded stack quantity. Markers wait for every choice's item data to load and do not change selection, tooltips, or controller navigation. In-game validation is pending.
+- When claiming a quest reward with multiple item choices, a gold coin appears 3 UI units right and down from the top-left of each highest-value item's icon. Values include the rewarded stack quantity. Markers use the native `coin-gold` atlas on independent tooltip-stratum frames outside the fullscreen-menu fade list, following the reward icon’s scale and visibility. Markers refresh every frame, appearing on the first visual update with all choice data and layout available. They still wait for every choice's item data to load, follow native reward fades, and do not change selection, tooltips, or controller navigation. Coin visibility is confirmed in game; the inset position awaits visual confirmation.
 
 - Open an untranslated mage scroll's More menu and press Square or click Comprehend above the menu. The action uses the localized, rankless Comprehend Scroll spell on that bag slot. The server validates skill requirements and the result. Locked items or occupied cursors dim the row; combat hides it. The row hides after activation; reopen More to retry or decipher another scroll. Square leaves the native menu open. Ordinary buff scrolls and already-deciphered mage scrolls do not show Comprehend. In-game casting and taint validation are pending.
 
@@ -214,6 +214,8 @@ The reason to keep this control outside the native filter panel is the reproduce
 The independent row had a separate click-lifetime issue. Native `Blizzard_Menu/Menu.lua` handles `GLOBAL_MOUSE_DOWN` by closing menus when the pointer is outside their bounds. The row is outside those bounds, so the next visual poll hides it; a checkbox waiting for mouse-up can disappear before its click completes. It registers `LeftButtonDown` to toggle on the press. This click adjustment still requires in-game confirmation and must not be described as evidence of a taint fix.
 
 For future map controls, retain the independent visual/control boundary and account-wide saved preference. Validate ordinary map close separately from opening the filter, toggling the checkbox, and then closing the map. Reload between isolation attempts so earlier taint does not survive into the next check. Inspect persisted captures after reproduction; never enable client taint logging. Relevant native sources are `Blizzard_MapCanvas/Blizzard_MapCanvas.lua`, `Blizzard_SharedMapDataProviders/FlightPointDataProvider.lua`, `Blizzard_WorldMap/Blizzard_WorldMapTemplates.lua`, and `Blizzard_Menu/Menu.lua` in the Forever UI source branch.
+
+Quest reward marker visibility failed with FullscreenMenus disabled. Captures showed available reward prices and a visible, full-opacity marker with matching icon coordinates. Moving the independent overlay to the tooltip stratum resolved visibility in game. The temporary reward-marker diagnostics are removed.
 
 ## UI Source Reference
 

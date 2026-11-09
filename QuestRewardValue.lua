@@ -1,7 +1,6 @@
 -- Mark the most valuable selectable quest rewards with independent coin visuals.
 local observer = CreateFrame("Frame")
 local markers = {}
-local elapsed = 0
 
 local function HideMarkers()
     for _, marker in ipairs(markers) do
@@ -25,25 +24,30 @@ local function ShowMarker(button, index)
 
     local marker = markers[index]
     if not marker then
-        marker = CreateFrame("Frame", nil, UIParent)
+        -- Fullscreen menu isolation fades UIParent children unrelated to its panel.
+        -- Keep this visual outside that tree and copy the native visibility below.
+        marker = CreateFrame("Frame")
         marker:EnableMouse(false)
         marker.texture = marker:CreateTexture(nil, "OVERLAY")
         marker.texture:SetAllPoints()
-        marker.texture:SetTexture("Interface\\MoneyFrame\\UI-GoldIcon")
+        marker.texture:SetAtlas("coin-gold")
         markers[index] = marker
     end
-    marker:SetFrameStrata(button:GetFrameStrata())
+    -- The reward buttons belong to a scroll child; their frame levels are not
+    -- a reliable stacking reference for an independent overlay outside it.
+    marker:SetFrameStrata("TOOLTIP")
     marker:SetFrameLevel(button:GetFrameLevel() + 10)
+    marker:SetScale(UIParent:GetEffectiveScale())
     marker:SetSize(14 * scale, 14 * scale)
     marker:ClearAllPoints()
-    marker:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left * scale, top * scale)
+    marker:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", (left + 3) * scale, (top - 3) * scale)
     marker:SetAlpha(button:GetEffectiveAlpha())
     marker:Show()
 end
 
 local function Refresh()
     HideMarkers()
-    if not QuestFrameRewardPanel or not QuestFrameRewardPanel:IsVisible()
+    if not UIParent:IsVisible() or not QuestFrameRewardPanel or not QuestFrameRewardPanel:IsVisible()
         or not QuestInfoFrame or QuestInfoFrame.questLog then return end
 
     local count = GetNumQuestChoices()
@@ -72,15 +76,6 @@ local function Refresh()
     end
 end
 
--- Read native state without hooks, native children, or controller registrations.
-observer:SetScript("OnUpdate", function(_, delta)
-    if not QuestFrameRewardPanel or not QuestFrameRewardPanel:IsVisible() then
-        HideMarkers()
-        elapsed = 0
-        return
-    end
-    elapsed = elapsed + delta
-    if elapsed < 0.1 then return end
-    elapsed = 0
-    Refresh()
-end)
+-- Read native state every frame so ready rewards appear on the first visual
+-- update, without a timer delay, hooks, or native controller registrations.
+observer:SetScript("OnUpdate", Refresh)
