@@ -1,4 +1,4 @@
--- Observes inventory More and draws an independent secure Disenchant row beneath it.
+-- Observes inventory More and draws an independent secure Disenchant row above it.
 local DISENCHANT = 13262
 local driver = CreateFrame("Frame")
 local action, context, icon, label
@@ -30,16 +30,23 @@ local function ItemGUID(bag, slot)
     return C_Item.GetItemGUID(ItemLocation:CreateFromBagAndSlot(bag, slot))
 end
 
-local function CanDisenchant(current)
-    if InCombatLockdown() or not KnowsDisenchant() or GetCursorInfo()
-        or SpellIsTargeting() or not current or current.used or not current.guid then return false end
+local function IsDisenchantableItem(current)
+    if not current or not current.guid then return false end
     local info = C_Container.GetContainerItemInfo(current.bag, current.slot)
-    if not info or info.isLocked or ItemGUID(current.bag, current.slot) ~= current.guid then return false end
+    if not info or ItemGUID(current.bag, current.slot) ~= current.guid then return false end
     -- The server decides exact item eligibility and required profession skill.
     local _, _, _, _, _, classID = C_Item.GetItemInfoInstant(info.itemID)
     return info.quality and info.quality >= Enum.ItemQuality.Uncommon
         and info.quality <= Enum.ItemQuality.Epic
         and (classID == Enum.ItemClass.Weapon or classID == Enum.ItemClass.Armor)
+end
+
+local function CanDisenchant(current)
+    if InCombatLockdown() or not KnowsDisenchant() or GetCursorInfo()
+        or SpellIsTargeting() or not current or current.used
+        or not IsDisenchantableItem(current) then return false end
+    local info = C_Container.GetContainerItemInfo(current.bag, current.slot)
+    return info and not info.isLocked
 end
 
 local function MenuHasFocus(menu)
@@ -143,15 +150,19 @@ local function Refresh()
         local bag, slot = owner:GetBagID(), owner:GetID()
         context = { menu = menu, owner = owner, bag = bag, slot = slot, guid = ItemGUID(bag, slot) }
     end
-    if context.used then return end
-    local left, bottom, width = menu:GetRect()
-    if not left or not bottom then ClearAction(); action:Hide(); return end
+    if context.used or not IsDisenchantableItem(context) then
+        ClearAction()
+        action:Hide()
+        return
+    end
+    local left, bottom, width, height = menu:GetRect()
+    if not left or not bottom or not width or not height then ClearAction(); action:Hide(); return end
     local scale = menu:GetEffectiveScale() / UIParent:GetEffectiveScale()
     action:SetScale(1)
     action:SetWidth(math.max(width * scale, label:GetStringWidth() + 47))
     action:ClearAllPoints()
     -- Numeric geometry only: no native parent, anchor, callback, or menu entry.
-    action:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left * scale, bottom * scale - 4)
+    action:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", left * scale, (bottom + height) * scale + 4)
     -- Keep the standalone row above fullscreen inventory chrome as well as the
     -- menu. Do not inherit the menu's potentially scaled presentation layer.
     action:SetFrameStrata("TOOLTIP")
