@@ -4,6 +4,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
+- Creates a Use Conjured All character macro containing only item-ID `/use` commands for nine supported conjured waters and seven foods. In-game validation is pending.
+
 - Marks the selectable quest reward with the highest total vendor sell value with a gold coin icon in the claim-reward menu. Equal highest values are all marked; unsellable rewards are not marked. In-game validation is pending.
 
 - Adds an independent Comprehend row above the inventory More menu for the 17 recognized untranslated mage scrolls when Comprehend Scroll is known. Square or a mouse press casts on the selected scroll outside combat, with an empty cursor and an unlocked, unchanged item. Ordinary and deciphered scrolls hide the row. In-game validation is pending.
@@ -15,8 +17,6 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Shows faction-appropriate and neutral world-map flight points supplied by the client even when the native flight-point layer is hidden, with undiscovered icons dimmed. An independent Flight Points checkbox appears directly beneath the open map filter dropdown, enabled by default and saved account-wide; it toggles on left mouse-down without joining native controller navigation. Supplemental markers use addon-owned visuals with mouse-hover tooltips. Does not unlock travel; locations withheld by the client cannot be displayed.
 
 - Adds R3 (right-stick click) to run native bag cleanup while the controller inventory has focus, with a Clean Up Bags hint inside its bottom panel that follows native layout every frame without a timed refresh delay. Cleanup is unavailable in combat or while holding a cursor item.
-
-- Adds one-second native error-message suppression to the supported food and drink consume/conjure macros, preserving their item order, spell fallback, names, icons, and quick-wheel references.
 
 - Keeps addon operations silent in chat, including quick-wheel assignment, capacity warnings, slash-command responses, and quest-order rejection notices.
 
@@ -56,6 +56,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Usage
 
+- Use Conjured All contains water IDs `231778`, `22018`, `8079`, `8078`, `8077`, `3772`, `2136`, `2288`, and `5350`, followed by food IDs `22895`, `8076`, `8075`, `1487`, `1114`, `1113`, and `5349`. Its 16 `/use item:` lines occupy 243 characters and can be assigned through native Bind. It does not conjure items or suppress errors. Setup waits for combat to end, an empty cursor, and a free character macro slot. The exact earlier Food & Water macro migrates in place; the generated two-click Use Conjured All body is replaced with direct item commands, preserving matching quick-wheel references. Unedited generated Use Conjured Water and Use Conjured Food macros and their matching quick-wheel entries are removed. Custom edits and ambiguous duplicate names are preserved. In-game validation is pending.
+
 - When claiming a quest reward with multiple item choices, a gold coin appears at the top-left of each highest-value item's icon. Values include the rewarded stack quantity. Markers wait for every choice's item data to load and do not change selection, tooltips, or controller navigation. In-game validation is pending.
 
 - Open an untranslated mage scroll's More menu and press Square or click Comprehend above the menu. The action uses the localized, rankless Comprehend Scroll spell on that bag slot. The server validates skill requirements and the result. Locked items or occupied cursors dim the row; combat hides it. The row hides after activation; reopen More to retry or decipher another scroll. Square leaves the native menu open. Ordinary buff scrolls and already-deciphered mage scrolls do not show Comprehend. In-game casting and taint validation are pending.
@@ -69,8 +71,6 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Group loot roll item tooltips show native equipped-item comparisons without a modifier key, both when selecting a roll with the controller and when hovering its item with the mouse. Comparisons close with the native tooltip; items without comparable equipped gear retain their normal tooltip. In-game validation is pending.
 
 - Press R3 (right-stick click) while the controller inventory has focus to invoke the native Clean Up Bags action. Its native controller icon and label appear inside the inventory bottom panel, with layout reconciled every frame instead of waiting for a timed refresh. Item menus, Bind mode, other focused interfaces, and chat input retain priority. The hint dims in combat or while holding a cursor item. Existing bag sort preferences and ignored-bag settings apply. In-game validation is pending.
-
-- The existing Conjure Food and Conjure Water item-use macros receive `/run ForeverTweaksSuppressFoodErrors()` on login or macro changes, outside combat with an empty cursor. Only the exact supported item lists and spell fallback are matched. Each press pauses native error messages and their associated sounds for one second to cover delayed server rejections, including standing requirements. Repeated presses extend the window; unrelated errors during that second are also suppressed. Audio settings remain unchanged; sounds outside the native error-message handler are not suppressed. Normal error handling is restored afterward. Account macro edits apply across characters. In-game validation is pending.
 
 - Sets `cameraDistanceMaxZoomFactor` to `4` at login and UI reload to request the extended camera zoom limit. Scroll out to use it; the addon does not force the current zoom. The Forever client may cap the accepted value or distance; in-game validation is pending.
 
@@ -136,6 +136,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Implementation notes
 
+- `ConjuredRefreshments.lua` creates one plain conjured-item macro and migrates the exact earlier generated bodies outside combat. Component cleanup re-resolves macro indices after deletion and clears matching quick-wheel entries. No secure delegate buttons are created. [Conjure Water rank 8](https://wow-forever.gg/db/spells/468766-conjure-water/) supplies Mountain Spring Water.
+
 - `GamepadComprehend.lua` mirrors the independent Disenchant control with a separate secure owner, bounded alpha-only visibility captures, and an explicit untranslated-scroll item-ID allowlist. The two item categories are disjoint, so only one row owns Square. Neither action extends native menu construction or controller navigation. Scroll IDs and Comprehend Scroll ranks are listed in the [Comprehension client-data reference](https://theforeverera.com/en/guides/professions/comprehension/); the [training spell](https://www.wowhead.com/forever/spell=1296017/comprehend-scroll) supplies the localized spell name.
 
 - The quick wheel stays outside `UISpecialFrames` and `UIPanelWindows`. Its secure owner retains stick selection and preconfigured actions; visual callbacks do not write protected selection or action attributes. A constant state driver clears its sample attribute to permit repeated updates. Show/hide snippets temporarily set the native state manager’s `updatetime` to zero and restore the previous interval only if it remains zero; this affects all state drivers and cannot interrupt an already-running timer.
@@ -148,7 +150,7 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Chat work shares a login-started ticker over `CHAT_FRAMES`. Artwork uses `CHAT_FRAME_TEXTURES`; input backgrounds and channel labels use alpha changes. Draft width is measured with a hidden font string and applied through the scrollbar-relative right anchor. Expansion temporarily anchors the dock primary at its bottom-left corner and restores all original anchors on focus exit, hide, or logout. Chat activation and sticky-channel attributes remain native to avoid contaminating controller focus.
 - History restoration uses `BackFillMessage` before new login messages and consumes its saved snapshot once. Whisper recreation uses `FCF_OpenTemporaryWindow`; unresolved friend identities wait for friend-list updates. Quest location filtering uses map POIs and localized quest headers without changing the native POI map or tracker methods; removed watches persist separately. Quest sorting debounces events and inserts watches in reverse order because the client prepends them.
 - Macro synchronization debounces action/spell events, upgrades spells before conversion, and recognizes generated bodies after normalizing line endings and trailing newlines. Duplicate references and helpful-spell restorations are verified before deleting macros; failed placements retain their source for retry. Rank parsing is shared through `MacroRanks.lua`.
-- Food-error suppression temporarily unregisters only `UI_ERROR_MESSAGE`; repeated presses replace the expiry timer, and logout restores registration. Combat fades use one blend driver that stops at completion and reverses from its current value. Cast-bar hooks avoid multiplying alpha repeatedly and adjust animation endpoints because animations bypass `SetAlpha`.
+- Combat fades use one blend driver that stops at completion and reverses from its current value. Cast-bar hooks avoid multiplying alpha repeatedly and adjust animation endpoints because animations bypass `SetAlpha`.
 - `Reload.tga` supplies the addon-list icon; `Reload.png` is sharing artwork excluded from packages. Minimap controls use `UI-HUD-Minimap-Frame-Cycle`. Controller input mapping stays in the external restore tool rather than individual in-game bindings.
 
 ### Bind-menu taint diagnosis
