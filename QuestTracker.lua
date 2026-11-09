@@ -1,8 +1,85 @@
--- Reorder the complete native watch list without replacing tracker Lua methods.
+-- Filter and sort native quest watches without replacing tracker Lua methods.
 local events = CreateFrame("Frame")
 local queued = false
 local sorting = false
 local lastRejectedOrder
+
+-- Copy location data without changing the map used by Blizzard's quest POIs.
+local function ReadLocation()
+    local mapID = C_Map.GetBestMapForUnit("player")
+    local inInstance = IsInInstance()
+    local names, maps, quests = {}, {}, {}
+    local function AddName(name)
+        if name and name ~= "" then names[name] = true end
+    end
+    AddName(GetRealZoneText())
+    AddName(GetZoneText())
+    if inInstance then AddName(GetInstanceInfo()) end
+    local info = mapID and C_Map.GetMapInfo(mapID)
+    -- Outdoors, subzones share their zone's quests; never ascend to a continent.
+    while not inInstance and info and info.mapType > Enum.UIMapType.Zone do
+        local parent = C_Map.GetMapInfo(info.parentMapID)
+        if not parent or parent.mapType < Enum.UIMapType.Zone then break end
+        info = parent
+        mapID = info.mapID
+    end
+    -- A mapless instance can report its outdoor entrance map; ignore that map.
+    if info and info.mapType >= Enum.UIMapType.Zone
+        and (not inInstance or info.mapType >= Enum.UIMapType.Dungeon) then
+        AddName(info.name)
+        maps[mapID] = true
+        if inInstance then
+            local group = C_Map.GetMapGroupID(mapID)
+            for _, floor in ipairs(group and C_Map.GetMapGroupMembersInfo(group) or {}) do
+                maps[floor.mapID] = true
+            end
+        end
+    end
+    if not next(names) and not next(maps) then return end
+    for id in pairs(maps) do
+        for _, poi in ipairs(C_QuestLog.GetQuestsOnMap(id) or {}) do
+            quests[poi.questID] = true
+        end
+    end
+    return names, quests
+end
+
+local function FilterQuestWatches()
+    local names, localQuests = ReadLocation()
+    if not names then return end
+    if type(ForeverTweaksHiddenQuestWatches) ~= "table" then
+        ForeverTweaksHiddenQuestWatches = {}
+    end
+    local hidden = ForeverTweaksHiddenQuestWatches
+    local candidates = {}
+    for id in pairs(hidden) do candidates[id] = true end
+    for index = 1, C_QuestLog.GetNumQuestWatches() do
+        local id = C_QuestLog.GetQuestIDForQuestWatchIndex(index)
+        if id then candidates[id] = true end
+    end
+    for id in pairs(candidates) do
+        if not C_QuestLog.IsOnQuest(id) then
+            hidden[id] = nil
+        else
+            local headerIndex = C_QuestLog.GetHeaderIndexForQuest(id)
+            local header = headerIndex and C_QuestLog.GetInfo(headerIndex)
+            -- Named dungeon headers cover instances without quest POI maps.
+            local matches = localQuests[id] or (header and names[header.title])
+            if matches then
+                if hidden[id] then
+                    C_QuestLog.AddQuestWatch(id)
+                    if C_QuestLog.GetQuestWatchType(id) ~= nil then hidden[id] = nil end
+                end
+            else
+                -- Persist intent before removing the native watch, including reloads.
+                hidden[id] = true
+                if C_QuestLog.GetQuestWatchType(id) ~= nil then
+                    C_QuestLog.RemoveQuestWatch(id)
+                end
+            end
+        end
+    end
+end
 
 local function ReadWatches()
     local entries = {}
@@ -22,9 +99,12 @@ end
 
 local function SortQuestWatches()
     queued = false
-    if InCombatLockdown() or sorting then
+    if not IsLoggedIn() or InCombatLockdown() or sorting then
         return
     end
+    sorting = true
+    FilterQuestWatches()
+    sorting = false
     local entries = ReadWatches()
     if not entries or #entries < 2 then
         return
@@ -92,7 +172,8 @@ end
 -- Zone changes also cause Blizzard to sort watches by its native criteria.
 hooksecurefunc(C_QuestLog, "SortQuestWatches", QueueSort)
 for _, event in ipairs({ "PLAYER_LOGIN", "PLAYER_ENTERING_WORLD", "PLAYER_REGEN_ENABLED",
-    "QUEST_LOG_UPDATE", "QUEST_WATCH_LIST_CHANGED" }) do
+    "QUEST_LOG_UPDATE", "QUEST_WATCH_LIST_CHANGED", "ZONE_CHANGED",
+    "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA", "QUEST_POI_UPDATE" }) do
     events:RegisterEvent(event)
 end
 events:SetScript("OnEvent", QueueSort)

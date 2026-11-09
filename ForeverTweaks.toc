@@ -7,7 +7,7 @@
 ## SavedVariables: ForeverTweaksDiagnostics
 #@end-alpha@
 ## SavedVariables: ForeverTweaksFlightPointsEnabled
-## SavedVariablesPerCharacter: ForeverTweaksAttackMacros, ForeverTweaksChatHistory, ForeverTweaksQuickMenu
+## SavedVariablesPerCharacter: ForeverTweaksAttackMacros, ForeverTweaksChatHistory, ForeverTweaksQuickMenu, ForeverTweaksHiddenQuestWatches
 
 ForeverTweaks.lua
 ActionCooldowns.lua
