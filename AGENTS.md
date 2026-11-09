@@ -4,6 +4,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 
 ## Features
 
+- Adds an independent Comprehend row above the inventory More menu for the 17 recognized untranslated mage scrolls when Comprehend Scroll is known. Square or a mouse press casts on the selected scroll outside combat, with an empty cursor and an unlocked, unchanged item. Ordinary and deciphered scrolls hide the row. In-game validation is pending.
+
 - Shows an independent Disenchant row above the inventory item’s open More menu when Enchanting’s Disenchant spell is known. Square or a mouse press casts on that item through an addon-owned secure button. The row stays outside native menu construction and controller navigation; obvious non-disenchantable items hide the row, while combat, occupied cursors, and locked items prevent casting. In-game validation is pending.
 
 - Shows your threat as a hollow ring inside the target level badge, matching the player XP ring’s shape. It is green below 70%, yellow from 70%, orange from 90% or elevated native threat status, and red while securely tanking. Fill compares your threat with the highest reported threat among the current tank, group members, and pets; a full ring means tied or leading threat. Updates immediately on threat events and refreshes every 0.05 seconds.
@@ -51,6 +53,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - Captures protected-action failures with native field taint ownership and up to 20 quick-menu routing and mapped-button state changes in source and alpha packages for troubleshooting, without controller-panel method hooks.
 
 ## Usage
+
+- Open an untranslated mage scroll's More menu and press Square or click Comprehend above the menu. The action uses the localized, rankless Comprehend Scroll spell on that bag slot. The server validates skill requirements and the result. Locked items or occupied cursors dim the row; combat hides it. The row hides after activation; reopen More to retry or decipher another scroll. Square leaves the native menu open. Ordinary buff scrolls and already-deciphered mage scrolls do not show Comprehend. In-game casting and taint validation are pending.
 
 - With Enchanting learned, open an inventory item’s More menu and press Square or click the separate Disenchant row above it. It casts immediately without an additional confirmation, only outside combat on unlocked uncommon, rare, and epic weapons or armor with an empty cursor. The client/server validates exact eligibility and skill requirements. The row hides for items outside uncommon, rare, and epic weapons or armor. Eligible items with temporary casting restrictions appear dimmed outside combat. Square leaves the native menu open; close it with the normal Back action. Mouse activation happens on press before native outside-click dismissal. The row hides after activation; reopen More for another item. If the captured item changes, reopen More before casting. In-game activation and taint validation are pending.
 
@@ -127,6 +131,8 @@ A lightweight quality-of-life addon for World of Warcraft Forever.
 - [AGENTS.md](AGENTS.md) holds this documentation and repository rules; `README.md` links to it.
 
 ## Implementation notes
+
+- `GamepadComprehend.lua` mirrors the independent Disenchant control with a separate secure owner, bounded alpha-only visibility captures, and an explicit untranslated-scroll item-ID allowlist. The two item categories are disjoint, so only one row owns Square. Neither action extends native menu construction or controller navigation. Scroll IDs and Comprehend Scroll ranks are listed in the [Comprehension client-data reference](https://theforeverera.com/en/guides/professions/comprehension/); the [training spell](https://www.wowhead.com/forever/spell=1296017/comprehend-scroll) supplies the localized spell name.
 
 - The quick wheel stays outside `UISpecialFrames` and `UIPanelWindows`. Its secure owner retains stick selection and preconfigured actions; visual callbacks do not write protected selection or action attributes. A constant state driver clears its sample attribute to permit repeated updates. Show/hide snippets temporarily set the native state manager’s `updatetime` to zero and restore the previous interval only if it remains zero; this affects all state drivers and cannot interrupt an already-running timer.
 - Quick-wheel focus discovery reads native state without replacing focus methods. Collapsed raid controls map to `displayFrame`, and chat blockers map to native focus footers. `GamepadGroupLootRollFrame` is registered while hidden so a first roll appearing in combat can release Share. The collapsed-raid exception checks the binding group and expansion function, not the shared function-binding CLICK button.

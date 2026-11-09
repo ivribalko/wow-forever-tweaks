@@ -19,6 +19,7 @@ GamepadCamera.lua
 GamepadLeaveGroup.lua
 GamepadBagCleanup.lua
 GamepadDisenchant.lua
+GamepadComprehend.lua
 GamepadQuickMenu.lua
 QuestTracker.lua
 FlightPoints.lua
