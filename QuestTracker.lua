@@ -3,6 +3,9 @@ local events = CreateFrame("Frame")
 local queued = false
 local sorting = false
 local lastRejectedOrder
+local worldReady = false
+local refreshGeneration = 0
+local restoreLocationWatches = true
 
 -- Copy location data without changing the map used by Blizzard's quest POIs.
 local function ReadLocation()
@@ -53,14 +56,36 @@ local function FilterQuestWatches()
     local hidden = ForeverTweaksHiddenQuestWatches
     local candidates = {}
     for id in pairs(hidden) do candidates[id] = true end
+    if restoreLocationWatches then
+        -- Login/reload can start with neither native watches nor saved hidden
+        -- watches. Seed from the log instead of requiring a zone transition.
+        local count, questCount = C_QuestLog.GetNumQuestLogEntries()
+        local loaded = questCount and questCount > 0
+        local restored = {}
+        for index = 1, count do
+            local info = C_QuestLog.GetInfo(index)
+            if not info then
+                loaded = false
+            elseif not info.isHeader and not info.isHidden and info.questID then
+                restored[info.questID] = true
+            end
+        end
+        if loaded then
+            for id in pairs(restored) do
+                candidates[id] = true
+                hidden[id] = true
+            end
+            restoreLocationWatches = false
+        end
+    end
     for index = 1, C_QuestLog.GetNumQuestWatches() do
         local id = C_QuestLog.GetQuestIDForQuestWatchIndex(index)
         if id then candidates[id] = true end
     end
     for id in pairs(candidates) do
-        if not C_QuestLog.IsOnQuest(id) then
-            hidden[id] = nil
-        else
+        -- Missing login data is not evidence that a saved quest was abandoned.
+        -- QUEST_REMOVED clears saved intent when a quest actually leaves the log.
+        if C_QuestLog.IsOnQuest(id) then
             local headerIndex = C_QuestLog.GetHeaderIndexForQuest(id)
             local header = headerIndex and C_QuestLog.GetInfo(headerIndex)
             -- Named dungeon headers cover instances without quest POI maps.
@@ -99,7 +124,7 @@ end
 
 local function SortQuestWatches()
     queued = false
-    if not IsLoggedIn() or InCombatLockdown() or sorting then
+    if not worldReady or not IsLoggedIn() or InCombatLockdown() or sorting then
         return
     end
     sorting = true
@@ -172,8 +197,34 @@ end
 -- Zone changes also cause Blizzard to sort watches by its native criteria.
 hooksecurefunc(C_QuestLog, "SortQuestWatches", QueueSort)
 for _, event in ipairs({ "PLAYER_LOGIN", "PLAYER_ENTERING_WORLD", "PLAYER_REGEN_ENABLED",
+    "PLAYER_LEAVING_WORLD", "QUEST_REMOVED",
     "QUEST_LOG_UPDATE", "QUEST_WATCH_LIST_CHANGED", "ZONE_CHANGED",
     "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA", "QUEST_POI_UPDATE" }) do
     events:RegisterEvent(event)
 end
-events:SetScript("OnEvent", QueueSort)
+events:SetScript("OnEvent", function(_, event, questID)
+    if event == "PLAYER_LEAVING_WORLD" then
+        worldReady = false
+        refreshGeneration = refreshGeneration + 1
+        return
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        worldReady = true
+        refreshGeneration = refreshGeneration + 1
+        local generation = refreshGeneration
+        -- Map names, quest headers, and POIs can settle after the login events.
+        -- Retry briefly even if the client emits no subsequent zone change.
+        local remaining = 10
+        local function RefreshLoginLocation()
+            if generation ~= refreshGeneration or not worldReady then return end
+            QueueSort()
+            remaining = remaining - 1
+            if remaining > 0 then C_Timer.After(1, RefreshLoginLocation) end
+        end
+        C_Timer.After(1, RefreshLoginLocation)
+    elseif event == "QUEST_REMOVED" then
+        if type(ForeverTweaksHiddenQuestWatches) == "table" then
+            ForeverTweaksHiddenQuestWatches[questID] = nil
+        end
+    end
+    QueueSort()
+end)
