@@ -6,7 +6,7 @@
 #@alpha@
 ## SavedVariables: ForeverTweaksDiagnostics
 #@end-alpha@
-## SavedVariables: ForeverTweaksFlightPointsEnabled
+## SavedVariables: ForeverTweaksFlightPointsEnabled, ForeverTweaksDungeonEntrancesEnabled
 ## SavedVariablesPerCharacter: ForeverTweaksAttackMacros, ForeverTweaksChatHistory, ForeverTweaksQuickMenu, ForeverTweaksHiddenQuestWatches
 
 ForeverTweaks.lua
@@ -24,6 +24,7 @@ GamepadQuickMenu.lua
 QuestTracker.lua
 QuestRewardValue.lua
 FlightPoints.lua
+DungeonEntrances.lua
 PlayerFrameXP.lua
 TargetFrameThreat.lua
 ProfessionTooltip.lua

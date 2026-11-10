@@ -27,8 +27,8 @@ local function RefreshFlightPointCheckbox()
         return
     end
 
-    local left, bottom, width = menu:GetRect()
-    if not left or not bottom or not width then
+    local left, bottom, width, height = menu:GetRect()
+    if not left or not bottom or not width or not height then
         return
     end
     if not filterCheckbox then
@@ -71,7 +71,7 @@ local function RefreshFlightPointCheckbox()
     filterCheckbox:SetFrameStrata(menu:GetFrameStrata())
     filterCheckbox:SetFrameLevel(menu:GetFrameLevel() + 30)
     filterCheckbox:ClearAllPoints()
-    filterCheckbox:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, bottom - 4)
+    filterCheckbox:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", left, bottom + height + 36)
     filterCheckbox:SetChecked(FlightPointsEnabled())
     filterCheckbox:Show()
 end
