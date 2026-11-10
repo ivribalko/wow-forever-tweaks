@@ -1,4 +1,4 @@
--- Draw missing flight points without entering the native map pin/controller pools.
+-- Draw flight-point icons at two-thirds size outside the native map pin/controller pools.
 local pinTemplate = "FlightPointPinTemplate"
 local markers = {}
 local filterCheckbox
@@ -118,7 +118,8 @@ local function GetMarker(index, canvas)
         marker:SetMouseClickEnabled(false)
         marker:SetMouseMotionEnabled(true)
         marker.icon = marker:CreateTexture(nil, "ARTWORK")
-        marker.icon:SetAllPoints()
+        marker.icon:SetSize(20 / 1.5, 20 / 1.5)
+        marker.icon:SetPoint("CENTER")
         marker:SetScript("OnEnter", ShowTooltip)
         marker:SetScript("OnLeave", HideTooltip)
         marker:SetScript("OnHide", HideTooltip)
@@ -144,13 +145,11 @@ local function RefreshFlightPoints()
     end
 
     local enabled = FlightPointsEnabled()
-    local existing = {}
     for pin in map:EnumeratePinsByTemplate(pinTemplate) do
         if pin.poiInfo then
-            existing[pin.poiInfo.nodeID] = true
             -- Visual-only writes: never release native pins or invoke providers.
             if pin.Texture then
-                pin.Texture:SetAlpha(enabled and (pin.poiInfo.isUndiscovered and 0.55 or 1) or 0)
+                pin.Texture:SetAlpha(0)
             end
         end
     end
@@ -158,10 +157,12 @@ local function RefreshFlightPoints()
     local canvas = map:GetCanvas()
     local width, height = canvas:GetSize()
     local scale = map:GetEffectiveScale() / canvas:GetEffectiveScale()
+    local markerLevel = math.max(canvas:GetFrameLevel() + 20,
+        map:GetPinFrameLevelsManager():GetValidFrameLevel("PIN_FRAME_LEVEL_FLIGHT_POINT"))
     local count = 0
     if enabled then
         for _, node in ipairs(cachedNodes or {}) do
-            if not existing[node.nodeID] and IsFriendlyNode(node) then
+            if IsFriendlyNode(node) then
                 local x, y = node.position:GetXY()
                 if x >= 0 and x <= 1 and y >= 0 and y <= 1 then
                     count = count + 1
@@ -170,6 +171,7 @@ local function RefreshFlightPoints()
                         HideTooltip(marker)
                     end
                     marker.node = node
+                    marker:SetFrameLevel(markerLevel)
                     marker:SetScale(scale)
                     marker:ClearAllPoints()
                     marker:SetPoint("CENTER", canvas, "TOPLEFT", x * width / scale, -y * height / scale)
