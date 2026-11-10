@@ -215,6 +215,8 @@ local function CaptureEntrances(mapID, apiAvailable, nodes, nativeCount, drawnCo
         snapshot.nodes[index] = {
             areaPoiID = node.areaPoiID, atlas = node.atlasName, x = x, y = y,
             atlasAvailable = node.atlasName and C_Texture.GetAtlasInfo(node.atlasName) ~= nil,
+            markerLevel = markers[index] and markers[index]:GetFrameLevel(),
+            markerVisible = markers[index] and markers[index]:IsVisible(),
         }
     end
     for index, previous in ipairs(captures) do
@@ -260,6 +262,11 @@ local function RefreshDungeonEntrances()
     local canvas = map:GetCanvas()
     local width, height = canvas:GetSize()
     local scale = map:GetEffectiveScale() / canvas:GetEffectiveScale()
+    -- Zone exploration artwork is itself a native pin near level 2000.
+    -- Read its ordering, but never register our frames with the native manager.
+    local levels = map:GetPinFrameLevelsManager()
+    local markerLevel = math.max(canvas:GetFrameLevel() + 20,
+        levels:GetValidFrameLevel("PIN_FRAME_LEVEL_DUNGEON_ENTRANCE"))
     local count = 0
     if enabled then
         for _, node in ipairs(cachedNodes or {}) do
@@ -273,6 +280,7 @@ local function RefreshDungeonEntrances()
                         HideTooltip(marker)
                     end
                     marker.node = node
+                    marker:SetFrameLevel(markerLevel)
                     marker:SetScale(scale)
                     marker:ClearAllPoints()
                     marker:SetPoint("CENTER", canvas, "TOPLEFT", x * width / scale, -y * height / scale)
