@@ -15,6 +15,7 @@ GamepadCompactButton.lua
 ReloadButton.lua
 InstanceChat.lua
 ChatHistory.lua
+GamepadChatChannels.lua
 GamepadCamera.lua
 GamepadLeaveGroup.lua
 GamepadBagCleanup.lua
