@@ -117,6 +117,9 @@ local SHARE_HOLD = [[
         self:SetAttribute("macro", slot:GetAttribute("macro"))
         if slot:GetAttribute("leave-group") then return nil, "leave-group" end
         self:SetAttribute("type1", slot:GetAttribute("saved-type"))
+        if self:GetAttribute("type1") == "item" then
+            control:CallMethod("BeginItemSelection")
+        end
     end
     return nil, "close"
 ]]
@@ -714,7 +717,15 @@ local function ActionButton(name, parent)
     button:RegisterForClicks("AnyUp")
     button:SetAttribute("useOnKeyDown", false)
     -- Close through a secure post-click even if activation starts combat.
-    SecureHandlerWrapScript(button, "OnClick", owner, "return nil, true", [[
+    SecureHandlerWrapScript(button, "OnClick", owner, [[
+        if button == "LeftButton" and self:GetAttribute("type1") == "item" then
+            control:CallMethod("BeginItemSelection")
+        end
+        return nil, true
+    ]], [[
+        if button == "LeftButton" and self:GetAttribute("type1") == "item" then
+            control:CallMethod("FinishItemSelection")
+        end
         if button == "LeftButton" and self:GetAttribute("type1") then
             self:GetParent():Hide()
         end
@@ -734,6 +745,23 @@ local function Initialize()
         end
     end
     owner = CreateFrame("Frame", "ForeverTweaksQuickMenuOwner", UIParent, "SecureHandlerStateTemplate")
+    -- Match native bag clicks through the client's source-tracking delegates.
+    -- Its enchant-selection event opens and filters the character screen;
+    -- do not open panels or change their controller focus from addon code.
+    owner.BeginItemSelection = function()
+        if ItemButtonUtil and ItemButtonUtil.MarkItemSelectionFromBag then
+            ItemButtonUtil.MarkItemSelectionFromBag()
+        end
+    end
+    owner.FinishItemSelection = function()
+        if not ItemButtonUtil or not ItemButtonUtil.MarkItemSelectionFromBag
+            or not ItemButtonUtil.ClearPendingItemSelectionSource then return end
+        if C_Spell.TargetSpellIsEnchanting() then
+            ItemButtonUtil.MarkItemSelectionFromBag()
+        else
+            ItemButtonUtil.ClearPendingItemSelectionSource()
+        end
+    end
     wheel = CreateFrame("Frame", "ForeverTweaksQuickMenuFrame", UIParent, "SecureHandlerShowHideTemplate")
     wheel:Hide()
     wheel:SetSize(400, 590)
@@ -900,6 +928,9 @@ local function Initialize()
         elseif message == "assign" then
             control:CallMethod("FinishBinding")
         elseif message == "close" or message == "leave-group" then
+            if self:GetAttribute("type1") == "item" then
+                control:CallMethod("FinishItemSelection")
+            end
             control:GetFrameRef("wheel"):Hide()
             self:SetAttribute("type1", nil)
             -- Close before leaving so roster changes refresh a closed wheel.
