@@ -7,8 +7,8 @@ local cachedNodes
 local refreshPending = true
 local nextDataRefresh = 0
 
--- Entrance/approach coordinates checked against the Forever dungeon-location reference
--- linked in AGENTS.md. Values are map ID, x%, y%, label, optional raid atlas/zone-only flag.
+-- Entrance/approach coordinates use the references linked in AGENTS.md.
+-- Values are map ID, x%, y%, label, optional raid atlas/zone-only flag and description.
 local fallbackEntrances = {
     {1440, 14.00, 13.10, "Blackfathom Deeps"},
     {1418, 44.53, 12.12, "Uldaman"},
@@ -41,6 +41,22 @@ local fallbackEntrances = {
     {1422, 69.00, 72.90, "Scholomance"},
     {1436, 42.57, 71.71, "Deadmines"},
     {1434, 53.96, 17.57, "Zul'Gurub", true},
+    {1455, 43.50, 52.00, "Hall of Thanes", false, false,
+        "Follow the passage inside the High Seat down beneath Ironforge."},
+    {1437, 48.10, 56.50, "Excavation Site: Wetlands", false, false,
+        "Follow the uphill path starting near Thelgen Rock at 53.9, 65.4."},
+    {1421, 69.30, 45.60, "City of Dalaran", false, false,
+        "Sewer entrance in Silverpine Forest."},
+    {1434, 21.40, 27.90, "The Drowned City", false, false,
+        "Underwater entrance at the Sunken Hollow, beyond the Vile Reef."},
+    {2548, 37.50, 37.50, "Krol'dok Stronghold", false, false,
+        "Approximate cave approach near the fortress gates, north of Sunnyglade."},
+    {1445, 75.00, 15.00, "Alcaz Prison", false, false,
+        "In the basement of the large building on Alcaz Island."},
+    {1447, 38.70, 33.40, "Blackmaw Hold", false, false,
+        "Follow the furbolg tunnel to the dungeon portal."},
+    {1449, 48.10, 6.10, "Shaper's Terrace", false, false,
+        "Approximate approach above Marshal's Refuge; take the stone staircase."},
 }
 
 -- Project only into ancestor maps, never into unrelated overlapping map rectangles.

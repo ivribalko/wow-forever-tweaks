@@ -2,7 +2,7 @@
 local filterCheckbox, countLabel
 local counts = {}
 
--- Classic outdoor-zone recommendations, used only when client levels are absent.
+-- Classic and Forever outdoor-zone recommendations when client levels are absent.
 -- Sources are linked in AGENTS.md; keys are UI map IDs, not area IDs.
 local zoneLevels = {
     [1411] = {1, 10}, [1412] = {1, 10}, [1413] = {10, 25},
@@ -18,6 +18,10 @@ local zoneLevels = {
     [1443] = {30, 40}, [1444] = {40, 50}, [1445] = {35, 45},
     [1446] = {40, 50}, [1447] = {48, 55}, [1448] = {48, 55},
     [1449] = {48, 55}, [1451] = {55, 60}, [1452] = {55, 60},
+    [2482] = {55, 60}, -- Mount Hyjal
+    [2521] = {1, 12}, -- Zephras Isle
+    [2548] = {36, 44}, -- Riverglades
+    [2652] = {38, 45}, -- Shen'dralas (reported quest-level range)
 }
 local function QuestCountsEnabled()
     return ForeverTweaksQuestCountsEnabled == true
